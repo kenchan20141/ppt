@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA - 真實圖片版 (Yahoo 搜尋)</title>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&family=Noto+Sans+TC:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f5f5f7;
+            --surface: #ffffff;
+            --text-main: #111111;
+            --text-muted: #888888;
+            --border: #eaeaea;
+            --bg-opacity: 0.15;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            height: 100vh; display: flex; overflow: hidden;
+        }
+
+        .sidebar {
+            width: 30%; min-width: 340px; background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 4rem 3rem; z-index: 10;
+        }
+
+        .brand { font-size: 1.2rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 3rem; color: #111; }
+        .toolbar { display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 1.5rem; height: 36px;}
+        
+        .icon-toggle {
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+            background: transparent; border: 1px solid transparent; transition: all 0.3s ease;
+            color: var(--text-muted);
+        }
+        .icon-toggle:hover { color: #111; background: #fafafa; border-color: #eee; }
+        .icon-toggle.active-mode { color: #111; background: #f4f4f4; border-color: #e5e5e5; }
+        .icon-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+        textarea {
+            flex: 1; border: none; resize: none; font-family: inherit; font-size: 1.05rem;
+            line-height: 1.8; color: var(--text-main); background: transparent; outline: none; margin-bottom: 2rem;
+            font-weight: 300;
+        }
+        textarea::placeholder { color: #cccccc; font-weight: 200; }
+
+        .btn {
+            background: #111; color: #fff; border: none; padding: 1.2rem;
+            font-size: 0.85rem; font-weight: 300; letter-spacing: 2px; cursor: pointer; transition: 0.3s;
+        }
+        .btn:hover { background: #333; }
+        .btn:disabled { background: #f0f0f0; color: #aaa; cursor: not-allowed; }
+
+        .main-content {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
+        }
+
+        .presentation-wrapper {
+            width: 85%; max-width: 1280px; aspect-ratio: 16 / 9; 
+            background: #ffffff;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02); 
+            border: 1px solid rgba(0,0,0,0.05);
+            position: relative; overflow: hidden;
+        }
+
+        .slide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0;
+            pointer-events: none; transition: opacity 0.8s ease;
+            display: grid; 
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: auto 1fr; 
+            gap: 2vw;
+            padding: 5vw 6vw 7vw 6vw; 
+            box-sizing: border-box; overflow: hidden;
+        }
+        .slide.active { opacity: 1; pointer-events: auto; }
+        .slide > *:not(.bg-img) { position: relative; z-index: 2; }
+
+        .slide > .bg-img {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; opacity: var(--bg-opacity); z-index: 1; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-img-wrapper {
+            width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08); display: flex; background: #f9f9f9;
+        }
+        .feature-img-wrapper img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+
+        .slide h1, .slide h2 { 
+            grid-row: 1; align-self: start; 
+            margin: 0; word-break: keep-all; text-align: left; 
+        }
+        .slide h1 { font-size: clamp(2.5rem, 5vw, 4.5rem); line-height: 1.2; font-weight: 200; color: #111; margin-bottom: 0.5rem;}
+        .slide h2 { font-size: clamp(1.8rem, 3.5vw, 3rem); font-weight: 300; color: #666; letter-spacing: 2px;}
+        
+        .slide p, .slide ul { 
+            grid-row: 2; align-self: center; 
+            font-size: clamp(1.3rem, 2vw, 1.8rem); line-height: 1.9; color: #333; margin: 0; 
+            font-weight: 300; text-align: left; 
+        }
+
+        .layout-standard h1, .layout-standard h2, .layout-standard p { grid-column: 1 / 11; }
+        .layout-indent h1, .layout-indent h2 { grid-column: 1 / 12; }
+        .layout-indent p { grid-column: 4 / 12; }
+        .layout-split-left-img h1, .layout-split-left-img h2, .layout-split-left-img p { grid-column: 1 / 7; }
+        .layout-split-left-img .feature-img-wrapper { grid-column: 8 / 13; grid-row: 1 / 3; }
+        .layout-split-right-img h1, .layout-split-right-img h2, .layout-split-right-img p { grid-column: 7 / 13; }
+        .layout-split-right-img .feature-img-wrapper { grid-column: 1 / 6; grid-row: 1 / 3; }
+
+        .slide-number-indicator {
+            position: absolute; bottom: 2vw; right: 3vw; font-size: 1.1rem;
+            font-weight: 300; color: #999; letter-spacing: 3px; z-index: 3;
+            font-variant-numeric: tabular-nums; pointer-events: none;
+        }
+
+        .controls-container { position: absolute; bottom: 2.5rem; display: flex; align-items: center; gap: 2rem; }
+        .icon-btn { background: transparent; border: none; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; color: #aaa; }
+        .icon-btn:hover { color: #111; }
+        .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+        .slide-counter { font-size: 0.8rem; font-weight: 300; color: #888; font-variant-numeric: tabular-nums; letter-spacing: 1px;}
+
+        .loader { display: none; position: absolute; inset: 0; background: rgba(255,255,255,0.85); backdrop-filter: blur(5px); z-index: 100; flex-direction: column; justify-content: center; align-items: center; gap: 15px;}
+        .spinner { width: 40px; height: 40px; border: 1px solid rgba(0,0,0,0.1); border-top-color: #111; border-radius: 50%; animation: spin 1s linear infinite; }
+        .loader-text { font-size: 0.85rem; font-weight: 300; color: #666; letter-spacing: 2px;}
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .empty-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; opacity: 0.15;}
+        .empty-state svg { width: 100px; height: 100px; stroke: #111; stroke-width: 0.5; fill: none; animation: breathe 4s infinite ease-in-out; }
+        @keyframes breathe { 0%, 100% { opacity: 0.5; transform: scale(0.98); } 50% { opacity: 1; transform: scale(1.02); } }
+        
+        .action-bar { position: absolute; top: 2rem; right: 2.5rem; display: flex; align-items: center; gap: 15px; }
+        .btn-export { background: #fff; border: 1px solid #ddd; padding: 6px 12px; font-size: 0.75rem; letter-spacing: 1px; cursor: pointer; transition: 0.2s; color: #666; border-radius: 4px; }
+        .btn-export:hover { border-color: #111; color: #111; }
+
+        .opacity-control { display: flex; align-items: center; gap: 8px; border-right: 1px solid #eee; padding-right: 15px;}
+        .opacity-control svg { width: 14px; height: 14px; color: #999; }
+        input[type=range] { -webkit-appearance: none; width: 60px; background: transparent; cursor: pointer; }
+        input[type=range]::-webkit-slider-runnable-track { height: 2px; background: #ddd; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #666; margin-top: -4px; transition: 0.2s; }
+        input[type=range]:hover::-webkit-slider-thumb { background: #111; transform: scale(1.2); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">AURA</div>
+        
+        <div class="toolbar">
+            <div class="icon-toggle" id="titleToggle" style="display: none; opacity: 0;">
+                <svg id="icon-title-on" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="7" y1="8" x2="17" y2="8" stroke-width="2.5"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>
+                <svg id="icon-title-off" viewBox="0 0 24 24" style="display: none;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="7" y1="9" x2="17" y2="9"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>
+            </div>
+
+            <div class="icon-toggle active-mode" id="modeToggle">
+                <svg id="icon-magic" viewBox="0 0 24 24"><path d="M21 16.052v-.004A9.965 9.965 0 0022 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10c1.72 0 3.336-.434 4.757-1.189l4.53 1.51-1.34-4.269zM12 7v10M7 12h10"/></svg>
+                <svg id="icon-lock" viewBox="0 0 24 24" style="display:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </div>
+        </div>
+
+        <textarea id="promptInput" placeholder="輸入簡報主題 (例如：七月與安生、李白的生平)"></textarea>
+        <button id="generateBtn" class="btn">GENERATE</button>
+    </div>
+
+    <div class="main-content">
+        <div class="action-bar" id="actionBar" style="display: none;">
+            <div class="opacity-control" title="調整背景濃度">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20v-20z" fill="currentColor" opacity="0.3"/></svg>
+                <input type="range" id="opacitySlider" min="0" max="100" value="40">
+            </div>
+            <button id="btnExportHtml" class="btn-export">HTML</button>
+            <button id="btnExportPptx" class="btn-export">PPTX</button>
+        </div>
+
+        <div class="presentation-wrapper" id="presentationBoard">
+            <div class="empty-state">
+                <svg viewBox="0 0 100 100"><rect x="15" y="25" width="70" height="50" rx="1" ry="1"></rect><line x1="25" y1="40" x2="60" y2="40"></line><line x1="25" y1="50" x2="75" y2="50"></line><line x1="25" y1="60" x2="50" y2="60"></line></svg>
+            </div>
+            <div class="loader" id="loader">
+                <div class="spinner"></div>
+                <div class="loader-text" id="loaderText">AI 內容生成中...</div>
+            </div>
+        </div>
+
+        <div class="controls-container" id="controls" style="display: none;">
+            <button class="icon-btn" id="prevBtn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+            <div class="slide-counter"><span id="currentSlideNum">0</span> / <span id="totalSlideNum">0</span></div>
+            <button class="icon-btn" id="nextBtn"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        </div>
+    </div>
+
+    <script>
+        const API_KEYS = ["pk_eFlNmo9v1lXOC6Zw"];
+        const API_URL = "https://gen.pollinations.ai/v1/chat/completions";
+        const MODEL = "gemini-search";
+        // 你提供的 Apps Script Web App URL
+        const GAS_IMAGE_API_URL = "https://script.google.com/macros/s/AKfycbyGgKbv4zpccrYSch-hUZQ1scC-5Ldsr-MFUvOwu5ZO3vTNdSKJ7uIEMTemcKUfczWVrQ/exec";
+
+        const generateBtn = document.getElementById('generateBtn');
+        const promptInput = document.getElementById('promptInput');
+        const presentationBoard = document.getElementById('presentationBoard');
+        const loader = document.getElementById('loader');
+        const loaderText = document.getElementById('loaderText');
+        const controls = document.getElementById('controls');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const currentSlideNum = document.getElementById('currentSlideNum');
+        const totalSlideNum = document.getElementById('totalSlideNum');
+        const actionBar = document.getElementById('actionBar');
+        const opacitySlider = document.getElementById('opacitySlider');
+        const btnExportHtml = document.getElementById('btnExportHtml');
+        const btnExportPptx = document.getElementById('btnExportPptx');
+        const modeToggle = document.getElementById('modeToggle');
+        const titleToggle = document.getElementById('titleToggle');
+        
+        let isAiMode = true;
+        let useTitleInStrict = true;
+        let slides = [];
+        let currentIndex = 0;
+
+        opacitySlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            const opacity = 0.02 + (val / 100) * 0.48; 
+            document.documentElement.style.setProperty('--bg-opacity', opacity.toFixed(3));
+        });
+
+        modeToggle.addEventListener('click', () => {
+            isAiMode = !isAiMode;
+            document.getElementById('icon-magic').style.display = isAiMode ? "block" : "none";
+            document.getElementById('icon-lock').style.display = isAiMode ? "none" : "block";
+            if (isAiMode) {
+                modeToggle.classList.add('active-mode');
+                titleToggle.style.opacity = "0";
+                setTimeout(() => titleToggle.style.display = "none", 300);
+            } else {
+                modeToggle.classList.remove('active-mode');
+                titleToggle.style.display = "flex";
+                setTimeout(() => titleToggle.style.opacity = "1", 10);
+            }
+        });
+
+        titleToggle.addEventListener('click', () => {
+            useTitleInStrict = !useTitleInStrict;
+            document.getElementById('icon-title-on').style.display = useTitleInStrict ? "block" : "none";
+            document.getElementById('icon-title-off').style.display = useTitleInStrict ? "none" : "block";
+            useTitleInStrict ? titleToggle.classList.remove('active-mode') : titleToggle.classList.add('active-mode');
+        });
+
+        function splitIntoChunks(text, maxLength = 110) {
+            const sentences = text.split(/([。！？.!?\n])/); 
+            let mergedSentences = [];
+            for (let i = 0; i < sentences.length; i += 2) {
+                let s = sentences[i];
+                let punc = sentences[i + 1] || "";
+                if (s + punc) mergedSentences.push(s + punc);
+            }
+            let chunks = [], currentChunk = "";
+            for (let s of mergedSentences) {
+                s = s.trim();
+                if (!s) continue;
+                if (currentChunk.length + s.length <= maxLength) currentChunk += (currentChunk ? " " : "") + s;
+                else {
+                    if (currentChunk) chunks.push(currentChunk);
+                    currentChunk = s;
+                }
+            }
+            if (currentChunk) chunks.push(currentChunk);
+            return chunks;
+        }
+
+        // ==========================================
+        // 【核心更新】使用 Apps Script 爬取 Yahoo 真實圖片
+        // ==========================================
+        async function fetchRealWebImages(slidesArray, mainTopic) {
+            const slideImages = [];
+            
+            for (let i = 0; i < slidesArray.length; i++) {
+                const slide = slidesArray[i];
+                const h2 = slide.querySelector('h2');
+                const subtitle = h2 ? h2.innerText.trim() : "";
+                
+                // 組合查詢字串，精準定位該頁圖片
+                let query = mainTopic;
+                if (subtitle && subtitle.length > 1 && subtitle.length < 15) {
+                    query = `${mainTopic} ${subtitle}`;
+                }
+                
+                let foundUrl = null;
+
+                try {
+                    // 呼叫你的 GAS Web App API，取得 Yahoo 圖片 URL
+                    const response = await fetch(`${GAS_IMAGE_API_URL}?q=${encodeURIComponent(query)}&limit=10`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.urls && data.urls.length > 0) {
+                        // 利用 i 取餘數，讓同一組圖片不會一直取到同一張
+                        const imgIndex = i % data.urls.length;
+                        foundUrl = data.urls[imgIndex];
+                    }
+                } catch (e) {
+                    console.warn(`第 ${i+1} 頁的 Yahoo 圖片抓取失敗，使用備用圖:`, e);
+                }
+                
+                // 如果 API 掛掉或完全找不到圖片，提供一個美觀的預設備用圖
+                if (!foundUrl) {
+                    foundUrl = `https://picsum.photos/seed/${encodeURIComponent(mainTopic) + i}/1600/900`;
+                }
+                
+                slideImages.push(foundUrl);
+                // 稍加延遲，避免短時間內對 Apps Script 產生過大負載
+                await new Promise(r => setTimeout(r, 400));
+            }
+            return slideImages;
+        }
+
+        generateBtn.addEventListener('click', async () => {
+            const topic = promptInput.value.trim();
+            if (!topic) return;
+
+            generateBtn.disabled = true;
+            loader.style.display = "flex";
+            loaderText.innerText = "AI 整理簡報內容中...";
+            controls.style.display = "none";
+            actionBar.style.display = "none";
+
+            try {
+                let finalHtml = "";
+                if (!isAiMode && !useTitleInStrict) {
+                    await new Promise(r => setTimeout(r, 400)); 
+                    const chunks = splitIntoChunks(topic, 110);
+                    finalHtml = chunks.map(c => `<div class="slide"><p>${c}</p></div>`).join("\n");
+                } 
+                else {
+                    let systemPrompt = isAiMode 
+                        ? `You are a minimalist designer. Output ONLY valid HTML. Enhance and structure input into slides. RULES: 1. TRADITIONAL CHINESE ONLY. 2. Max 100 chars per slide. 3. Format: <div class="slide"><h2>[Subtitle]</h2><p>[Text]</p></div>`
+                        : `You are a paginator. Output ONLY HTML. STRICT MODE: Format: <div class="slide"><h2>[Unique Subtitle]</h2><p>[EXACT text]</p></div>`;
+                    let userContent = isAiMode ? topic : splitIntoChunks(topic, 110).map((c, i) => `[Chunk ${i+1}]\n${c}`).join("\n\n");
+
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEYS[0]}` },
+                        body: JSON.stringify({
+                            model: MODEL,
+                            messages: [ { role: "system", content: systemPrompt }, { role: "user", content: userContent } ]
+                        })
+                    });
+
+                    if (!response.ok) throw new Error(response.status);
+                    const data = await response.json();
+                    finalHtml = data.choices[0].message.content.replace(/```html/gi, '').replace(/```/gi, '').trim();
+                }
+
+                await renderPresentation(finalHtml, topic);
+
+            } catch (error) {
+                console.error(error);
+                presentationBoard.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>`;
+            } finally {
+                generateBtn.disabled = false;
+                loader.style.display = "none";
+            }
+        });
+
+        async function renderPresentation(htmlContent, mainTopic) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+            
+            const layoutSequence = ['layout-standard', 'layout-split-right-img', 'layout-indent', 'layout-split-left-img'];
+            const newSlidesArray = Array.from(tempDiv.querySelectorAll('.slide'));
+
+            // 切換載入提示文字
+            loaderText.innerText = "從 Yahoo 搜尋相關配圖中...";
+
+            // 調用 GAS API 取得 Yahoo 真實圖片
+            const slideImages = await fetchRealWebImages(newSlidesArray, mainTopic);
+
+            newSlidesArray.forEach((slide, index) => {
+                const assignedLayout = layoutSequence[index % layoutSequence.length];
+                slide.classList.add(assignedLayout);
+                
+                const imageUrl = slideImages[index];
+
+                const setupImage = (img) => {
+                    img.src = imageUrl;
+                    img.onerror = function() {
+                        this.onerror = null; 
+                        this.src = `https://picsum.photos/seed/${Math.floor(Math.random()*99999)}/1600/900`;
+                    };
+                };
+
+                if (assignedLayout.includes('split') && assignedLayout.includes('img')) {
+                    const imgWrapper = document.createElement('div');
+                    imgWrapper.className = 'feature-img-wrapper';
+                    const img = document.createElement('img');
+                    setupImage(img);
+                    imgWrapper.appendChild(img);
+                    slide.appendChild(imgWrapper);
+                } else {
+                    const img = document.createElement('img');
+                    img.className = 'bg-img';
+                    setupImage(img);
+                    slide.insertBefore(img, slide.firstChild);
+                }
+
+                const pageNum = document.createElement('div');
+                pageNum.className = 'slide-number-indicator';
+                pageNum.innerText = String(index + 1).padStart(2, '0');
+                slide.appendChild(pageNum);
+            });
+
+            presentationBoard.innerHTML = '';
+            newSlidesArray.forEach(s => presentationBoard.appendChild(s));
+            presentationBoard.appendChild(loader);
+
+            slides = document.querySelectorAll('.slide');
+            if (slides.length === 0) return;
+
+            currentIndex = 0;
+            updateSlides();
+            controls.style.display = "flex";
+            actionBar.style.display = "flex";
+            totalSlideNum.innerText = slides.length;
+            
+            document.documentElement.style.setProperty('--bg-opacity', '0.15');
+            document.getElementById('opacitySlider').value = 30;
+        }
+
+        function updateSlides() {
+            slides.forEach((s, i) => s.classList.toggle('active', i === currentIndex));
+            currentSlideNum.innerText = currentIndex + 1;
+        }
+
+        prevBtn.addEventListener('click', () => { if (currentIndex > 0) { currentIndex--; updateSlides(); } });
+        nextBtn.addEventListener('click', () => { if (currentIndex < slides.length - 1) { currentIndex++; updateSlides(); } });
+        document.addEventListener('keydown', (e) => {
+            if (slides.length === 0) return;
+            if (e.key === 'ArrowRight' && currentIndex < slides.length - 1) { currentIndex++; updateSlides(); }
+            if (e.key === 'ArrowLeft' && currentIndex > 0) { currentIndex--; updateSlides(); }
+        });
+
+        // --- 匯出 HTML ---
+        btnExportHtml.addEventListener('click', () => {
+            const currentOpacity = getComputedStyle(document.documentElement).getPropertyValue('--bg-opacity').trim();
+            const slideHtml = Array.from(slides).map(s => s.outerHTML).join('\n');
+            const exportHtml = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>AURA Presentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&family=Noto+Sans+TC:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; margin: 0; background: #fff; overflow: hidden; }
+        .wrapper { width: 100vw; height: 100vh; position: relative; }
+        .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.8s ease; 
+                 display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: auto 1fr; gap: 2vw; padding: 5vw 6vw 7vw 6vw; box-sizing: border-box; overflow: hidden; }
+        .slide.active { opacity: 1; z-index: 10; }
+        .slide > *:not(.bg-img) { position: relative; z-index: 2; }
+        .slide > .bg-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: ${currentOpacity}; z-index: 1; }
+        .feature-img-wrapper { width: 100%; height: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.08); display: flex; background: #f9f9f9;}
+        .feature-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .slide h1, .slide h2 { grid-row: 1; align-self: start; margin: 0; word-break: keep-all; text-align: left; }
+        .slide h1 { font-size: clamp(3rem, 6vw, 5.5rem); font-weight: 200; line-height: 1.2; color: #111; margin-bottom: 0.5rem; }
+        .slide h2 { font-size: clamp(1.8rem, 3.5vw, 3rem); font-weight: 300; color: #666; letter-spacing: 2px; }
+        .slide p, .slide ul { grid-row: 2; align-self: center; font-size: clamp(1.5rem, 2.5vw, 2.2rem); line-height: 1.9; color: #333; margin: 0; font-weight: 300; text-align: left; }
+        
+        .layout-standard h1, .layout-standard h2, .layout-standard p { grid-column: 1 / 11; }
+        .layout-indent h1, .layout-indent h2 { grid-column: 1 / 12; }
+        .layout-indent p { grid-column: 4 / 12; }
+        .layout-split-left-img h1, .layout-split-left-img h2, .layout-split-left-img p { grid-column: 1 / 7; }
+        .layout-split-left-img .feature-img-wrapper { grid-column: 8 / 13; grid-row: 1 / 3; }
+        .layout-split-right-img h1, .layout-split-right-img h2, .layout-split-right-img p { grid-column: 7 / 13; }
+        .layout-split-right-img .feature-img-wrapper { grid-column: 1 / 6; grid-row: 1 / 3; }
+        
+        .slide-number-indicator { position: absolute; bottom: 2vw; right: 3vw; font-size: 1.2rem; font-weight: 300; color: #999; letter-spacing: 3px; z-index: 3; font-variant-numeric: tabular-nums; pointer-events: none; }
+        .ui-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 20px; }
+        .icon-btn { background: transparent; border: none; width: 40px; height: 40px; cursor: pointer; color: #aaa; display: flex; justify-content: center; align-items: center; transition: 0.2s;}
+        .icon-btn:hover { color: #111; }
+        .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round;}
+        .counter { font-size: 0.85rem; color: #888; font-weight: 300; font-variant-numeric: tabular-nums; letter-spacing: 1px;}
+    </style>
+</head>
+<body>
+    <div class="wrapper" id="board">${slideHtml}</div>
+    <div class="ui-bar">
+        <button class="icon-btn" id="btn-prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+        <div class="counter"><span id="num-curr">1</span> / <span id="num-tot">0</span></div>
+        <button class="icon-btn" id="btn-next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+    </div>
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const currEl = document.getElementById('num-curr');
+        document.getElementById('num-tot').innerText = slides.length;
+        let c = 0;
+        function update() { slides.forEach((s, i) => s.classList.toggle('active', i === c)); currEl.innerText = c + 1; }
+        if(slides.length > 0) update();
+        document.getElementById('btn-prev').addEventListener('click', (e) => { e.stopPropagation(); if(c > 0) { c--; update(); }});
+        document.getElementById('btn-next').addEventListener('click', (e) => { e.stopPropagation(); if(c < slides.length - 1) { c++; update(); }});
+        document.addEventListener('keydown', (e) => { if(e.key === 'ArrowRight' && c < slides.length - 1) { c++; update(); } if(e.key === 'ArrowLeft' && c > 0) { c--; update(); }});
+        document.getElementById('board').addEventListener('click', () => { if(c < slides.length - 1) { c++; update(); }});
+    <\/script>
+</body>
+</html>`;
+            const blob = new Blob([exportHtml], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'AURA_Presentation.html';
+            a.click();
+        });
+
+        // --- 匯出 PPTX ---
+        btnExportPptx.addEventListener('click', () => {
+            if(typeof PptxGenJS === 'undefined') { alert("PPT 引擎載入中，請稍後再試。"); return; }
+            
+            let pres = new PptxGenJS();
+            pres.layout = 'LAYOUT_16x9';
+
+            const currentOpacity = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bg-opacity').trim());
+            const pptxTransparency = 100 - (currentOpacity * 100);
+
+            slides.forEach((slide, index) => {
+                let pptSlide = pres.addSlide();
+                
+                let bgImg = slide.querySelector('.bg-img');
+                if (bgImg && bgImg.src) {
+                    try {
+                        pptSlide.addImage({ path: bgImg.src, x: 0, y: 0, w: '100%', h: '100%', transparency: pptxTransparency }); 
+                    } catch(e) {}
+                }
+                
+                let titleX = 0.8, titleW = 8.0, bodyX = 0.8, bodyW = 8.0;
+
+                if (slide.classList.contains('layout-indent')) {
+                    titleX = 0.8; titleW = 8.0; bodyX = 2.8; bodyW = 6.0; 
+                } 
+                else if (slide.classList.contains('layout-split-left-img')) {
+                    titleX = 0.6; titleW = 4.2; bodyX = 0.6; bodyW = 4.2;
+                    let featureImg = slide.querySelector('.feature-img-wrapper img');
+                    if (featureImg && featureImg.src) {
+                        try { pptSlide.addImage({ path: featureImg.src, x: 5.2, y: 0.6, w: 4.2, h: 4.4, sizing: {type: 'cover'} }); } catch(e){}
+                    }
+                } 
+                else if (slide.classList.contains('layout-split-right-img')) {
+                    titleX = 5.2; titleW = 4.2; bodyX = 5.2; bodyW = 4.2;
+                    let featureImg = slide.querySelector('.feature-img-wrapper img');
+                    if (featureImg && featureImg.src) {
+                        try { pptSlide.addImage({ path: featureImg.src, x: 0.6, y: 0.6, w: 4.2, h: 4.4, sizing: {type: 'cover'} }); } catch(e){}
+                    }
+                }
+
+                let h1 = slide.querySelector('h1');
+                let h2 = slide.querySelector('h2');
+                let titleY = 0.8;
+                
+                if(h1) { pptSlide.addText(h1.innerText, { x: titleX, y: titleY, w: titleW, align: 'left', fontSize: 44, color: '111111', bold: false }); titleY += 0.8; }
+                if(h2) { pptSlide.addText(h2.innerText, { x: titleX, y: titleY, w: titleW, align: 'left', fontSize: 26, color: '666666' }); }
+
+                let p = slide.querySelector('p');
+                if(p) {
+                    pptSlide.addText(p.innerText, { 
+                        x: bodyX, y: 2.2, w: bodyW, h: 2.5, 
+                        align: 'left', valign: 'middle', 
+                        fontSize: 20, color: '333333' 
+                    });
+                }
+
+                let pageStr = String(index + 1).padStart(2, '0');
+                pptSlide.addText(pageStr, { x: 9.0, y: 5.1, w: 0.8, h: 0.4, align: 'right', fontSize: 16, color: '999999', bold: false });
+            });
+
+            pres.writeFile({ fileName: "AURA_Presentation.pptx" });
+        });
+    </script>
+</body>
+</html>
