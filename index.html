@@ -55,10 +55,12 @@
         }
         .icon-toggle:hover { color: #111; background: #fafafa; border-color: #eee; }
         .icon-toggle.active-mode { color: #111; background: #f4f4f4; border-color: #e5e5e5; }
-        .icon-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+        .icon-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
         /* Highlight 按鈕專屬特效 */
         #highlightToggle.active-mode { color: var(--hl-color); background: #fff5eb; border-color: #fde6d0; }
+        #highlightToggle svg path.hl-line { transition: opacity 0.3s; opacity: 0; }
+        #highlightToggle.active-mode svg path.hl-line { opacity: 0.8; stroke: var(--hl-color); }
 
         /* 主關鍵詞輸入框 */
         .keyword-input-wrapper { margin-bottom: 1.5rem; }
@@ -244,8 +246,11 @@
         <div class="toolbar">
             <div class="icon-toggle" id="highlightToggle" title="開啟/關閉自動畫重點 (Highlight)">
                 <svg viewBox="0 0 24 24">
-                    <path d="M20.707 5.826l-3.535-3.536a1 1 0 0 0-1.414 0l-1.414 1.414 4.95 4.95 1.414-1.414a1 1 0 0 0 0-1.414zM4.929 17.657l4.95 4.95-6.364.707a1 1 0 0 1-1.1-1.1l.707-6.364 1.807 1.807z"></path>
-                    <path d="M6.343 16.243l9.9-9.9 4.95 4.95-9.9 9.9-4.95-4.95z" opacity="0.3"></path>
+                    <!-- 螢光筆主體 -->
+                    <path d="m9 11-6 6v3h9l3-3"></path>
+                    <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path>
+                    <!-- 底部劃線特效 (透過 CSS class 控制顯示) -->
+                    <path d="M3 21h18" stroke-width="2.5" class="hl-line"></path>
                 </svg>
             </div>
             <div class="icon-toggle" id="pageBreakBtn" title="插入圖形分頁標記 (強制從此處分頁)"><svg viewBox="0 0 24 24"><path d="M5 12h14M8 7l-3 5 3 5m8-10l3 5-3 5" stroke-width="2"></path></svg></div>
@@ -510,15 +515,16 @@
                     finalHtml = (await res.json()).choices[0].message.content.replace(/```html/gi, '').replace(/```/gi, '').trim();
                 }
 
-                // --- 新增：AI 螢光筆語意分析 ---
-                  if (isHighlightMode) {
+                // --- 強化版 AI 螢光筆語意分析 (嚴格防漏) ---
+                if (isHighlightMode) {
                     showLoader("正在間劃重點...");
-                    const hlPrompt = `你是一個排版助手。請分析以下 HTML 結構，找出 <p> 或 <ul> 標籤內的文字，並根據語意將「最重要、最核心」的詞彙或短句用 <span data-hl="true"> 包圍。
-                    規則：
-                    1. 針對每一個 <div class="slide">，嚴格限制只能標記 1 到 3 個最重要的詞彙或短句。
-                    2. 絕對不要更改任何原本的 HTML 標籤結構或其他文字內容。
-                    3. 確保只用 <span data-hl="true"> 包圍，不可破壞 HTML 結構。
-                    4. 只輸出修改後的完整 HTML，不要任何 markdown 標記或解釋。`;
+                    const hlPrompt = `你是一個專業的簡報語意分析專家。你的唯一任務是為提供的 HTML 程式碼加入高光（重點）標記。
+                    【嚴格規則，違反將導致解析失敗】：
+                    1. 絕對強制：你必須檢視「每一個」 <div class="slide">，並在其內部的 <p> 或 <ul> 標籤文字中，找出 1 到 3 個最重要的名詞或短句。
+                    2. 標記方式：將找出的詞彙用 <span data-hl="true"> </span> 包圍。
+                    3. 不可遺漏：即使文字很短，每個 <div class="slide"> 也「至少」要有一個 <span data-hl="true">。若有任何一頁沒有標記，視為任務失敗。
+                    4. 結構完整：絕對不可改變原本的任何 HTML 標籤，也不可增刪任何文字內容。
+                    5. 輸出格式：只輸出處理完的完整 HTML 程式碼，絕對不要加上 \`\`\`html 標籤，也不要任何解釋。`;
                     
                     try {
                         const hlRes = await fetch(API_URL, { 
