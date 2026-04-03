@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AURA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AUPT</title>
     <!-- 引入 PptxGenJS 引擎 -->
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
     <!-- 引入美學字體 -->
@@ -44,7 +44,7 @@
             width: 40px; height: 1px; background-color: #d4d4d4;
         }
 
-        .toolbar { display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 1.5rem; height: 36px;}
+        .toolbar { display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 1rem; height: 36px;}
         
         .icon-toggle {
             display: flex; align-items: center; justify-content: center;
@@ -56,7 +56,17 @@
         .icon-toggle.active-mode { color: #111; background: #f4f4f4; border-color: #e5e5e5; }
         .icon-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
-        .editor-wrapper { flex: 1; position: relative; display: flex; flex-direction: column; margin-bottom: 2rem; border-top: 1px solid transparent; overflow: hidden; }
+        /* 主關鍵詞輸入框 */
+        .keyword-input-wrapper { margin-bottom: 1.5rem; }
+        .keyword-input-wrapper input {
+            width: 100%; padding: 0.8rem 0; font-family: 'Noto Serif TC', serif; font-size: 0.95rem;
+            color: var(--text-main); background: transparent; border: none; border-bottom: 1px solid var(--border);
+            outline: none; transition: border-color 0.3s;
+        }
+        .keyword-input-wrapper input:focus { border-bottom-color: #111; }
+        .keyword-input-wrapper input::placeholder { color: #aaa; font-weight: 300; font-family: 'Inter', sans-serif; letter-spacing: 1px; }
+
+        .editor-wrapper { flex: 1; position: relative; display: flex; flex-direction: column; margin-bottom: 2rem; border-top: 1px solid transparent; overflow: hidden; min-height: 150px;}
         #promptInput {
             flex: 1; font-size: 1.1rem; line-height: 2.2; color: var(--text-main); 
             background: transparent; outline: none; font-weight: 300; 
@@ -110,21 +120,15 @@
 
         /* 絕對靜態文字框：不允許滾動，透過變數自適應縮放 */
         .text-inner-scroll { 
-            overflow: hidden; /* 強制不滾動 */
+            overflow: hidden; 
             width: 100%; 
             max-height: 100%; 
             display: flex; 
             flex-direction: column; 
-            --text-scale: 1; /* 動態字體縮放變數 */
+            --text-scale: 1; 
         }
         
-        .text-inner-scroll h1, .text-inner-scroll h2, .text-inner-scroll p, .text-inner-scroll ul { 
-            text-align: left; 
-            word-break: break-word; 
-            overflow-wrap: break-word; 
-        }
-        
-        /* 加入 var(--text-scale) 達成 JS 無縫縮放 */
+        .text-inner-scroll h1, .text-inner-scroll h2, .text-inner-scroll p, .text-inner-scroll ul { text-align: left; word-break: break-word; overflow-wrap: break-word; }
         .text-inner-scroll h1 { font-size: calc(clamp(2.8rem, 5cqw, 4rem) * var(--text-scale)); line-height: 1.2; font-weight: 500; color: #111; margin-bottom: 0.5rem;}
         .text-inner-scroll h2 { font-size: calc(clamp(1.8rem, 3.1cqw, 2.5rem) * var(--text-scale)); font-weight: 400; color: #666; letter-spacing: 4px;}
         .text-inner-scroll p, .text-inner-scroll ul { font-size: calc(clamp(1.3rem, 2.25cqw, 1.8rem) * var(--text-scale)); line-height: 2.1; color: #333; margin-top: 1rem; font-weight: 300; letter-spacing: 1px; }
@@ -133,8 +137,14 @@
         /* --- 藝術圖片外框 --- */
         .feature-img-wrapper { position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
         .art-frame { position: relative; padding: 0.8cqw; background: #ffffff; border: 1px solid #eee; box-shadow: 0 15px 45px rgba(0,0,0,0.1); max-width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;}
-        .art-frame::before { content: ''; position: absolute; inset: 0.4cqw; border: 1px solid rgba(0,0,0,0.06); pointer-events: none; }
-        .art-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+        .art-frame::before { content: ''; position: absolute; inset: 0.4cqw; border: 1px solid rgba(0,0,0,0.06); pointer-events: none; z-index: 5;}
+        
+        .art-frame img { 
+            display: block; width: 100%; height: 100%; object-fit: cover; 
+            cursor: pointer; transition: filter 0.3s ease, transform 0.3s ease; 
+        }
+        .art-frame:hover img { filter: brightness(0.85); transform: scale(0.995); }
+        .art-frame img.reloading { filter: blur(8px) grayscale(50%); transform: scale(0.98); pointer-events: none; }
 
         /* --- 6種靈活佈局 --- */
         .layout-img-left .feature-img-wrapper { grid-area: 2 / 1 / 12 / 6; }
@@ -161,8 +171,17 @@
         .slide-counter { font-size: 0.8rem; font-family: 'Inter', sans-serif; font-weight: 300; color: #888; font-variant-numeric: tabular-nums; letter-spacing: 1px;}
         .empty-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; opacity: 0.15;}
         .empty-state svg { width: 100px; height: 100px; stroke: #111; stroke-width: 0.5; fill: none; animation: breathe 4s infinite ease-in-out; }
-        @keyframes breathe { 0%, 100% { opacity: 0.5; transform: scale(0.98); } 50% { opacity: 1; transform: scale(1.02); } }
-        .action-bar { position: absolute; top: 2rem; right: 2.5rem; display: flex; align-items: center; gap: 15px; }
+        
+        .action-bar { position: absolute; top: 2rem; right: 2.5rem; display: flex; align-items: center; gap: 15px; z-index: 20;}
+
+        /* 子關鍵詞輸入框 (在 Action Bar 內) */
+        .sub-keyword-group { display: flex; align-items: center; border-bottom: 1px solid #ddd; margin-right: 10px; padding-bottom: 2px; transition: 0.3s; }
+        .sub-keyword-group:focus-within { border-bottom-color: #111; }
+        .sub-keyword-group input { border: none; background: transparent; outline: none; font-family: 'Noto Serif TC', serif; font-size: 0.85rem; color: #333; width: 150px; }
+        .sub-keyword-group input::placeholder { color: #aaa; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+        .btn-refresh-img { background: none; border: none; cursor: pointer; color: #888; display: flex; align-items: center; justify-content: center; padding: 2px; margin-left: 5px; transition: 0.2s; }
+        .btn-refresh-img:hover { color: #111; transform: rotate(180deg); }
+
         .btn-export { background: #fff; border: 1px solid #ddd; padding: 6px 12px; font-size: 0.75rem; font-family: 'Cinzel', serif; letter-spacing: 2px; cursor: pointer; transition: 0.2s; color: #666; border-radius: 4px; }
         .btn-export:hover { border-color: #111; color: #111; }
         .opacity-control { display: flex; align-items: center; gap: 8px; border-right: 1px solid #eee; padding-right: 15px;}
@@ -183,6 +202,26 @@
         .loading-text-stage { font-family: 'Noto Serif TC', serif; font-size: 1.2rem; font-weight: 300; letter-spacing: 4px; color: #333; animation: pulseText 2s infinite; }
         @keyframes slowSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulseText { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+        /* --- RWD 響應式設計 --- */
+        @media (max-width: 1024px) {
+            body { flex-direction: column; height: 100dvh; overflow-y: auto; overflow-x: hidden; }
+            .sidebar { width: 100%; min-width: 100%; height: auto; min-height: 45vh; padding: 2rem; border-right: none; border-bottom: 1px solid var(--border); flex: none; }
+            .main-content { min-height: 55vh; padding: 5rem 1rem 4rem 1rem; justify-content: flex-start; flex: none;}
+            .presentation-wrapper { width: 100%; max-width: 100%; }
+            .action-bar { top: 1rem; right: 1rem; flex-wrap: wrap; gap: 10px; }
+            .controls-container { bottom: 1rem; }
+        }
+
+        @media (max-width: 600px) {
+            .sidebar { padding: 1.5rem; min-height: 50vh; }
+            .brand { font-size: 1.8rem; margin-bottom: 1.5rem; letter-spacing: 8px; }
+            .action-bar { justify-content: flex-end; }
+            .opacity-control { border-right: none; padding-right: 0; }
+            .sub-keyword-group { width: 100%; justify-content: flex-end; border-bottom: none; margin-right: 0; margin-bottom: 5px;}
+            .sub-keyword-group input { width: auto; flex: 1; max-width: 150px; text-align: right; border-bottom: 1px solid #ddd; }
+            .btn-export { padding: 4px 8px; font-size: 0.7rem; }
+        }
     </style>
 </head>
 <body>
@@ -193,7 +232,7 @@
     </div>
 
     <div class="sidebar">
-        <div class="brand">AURA</div>
+        <div class="brand">AUPT</div>
         <div class="toolbar">
             <div class="icon-toggle" id="pageBreakBtn" title="插入圖形分頁標記 (強制從此處分頁)"><svg viewBox="0 0 24 24"><path d="M5 12h14M8 7l-3 5 3 5m8-10l3 5-3 5" stroke-width="2"></path></svg></div>
             <div class="icon-toggle active-mode" id="titleToggle" style="display: flex;" title="開啟/關閉自動產生標題">
@@ -205,12 +244,23 @@
                 <svg id="icon-lock" viewBox="0 0 24 24" style="display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             </div>
         </div>
+        
+        <div class="keyword-input-wrapper">
+            <input type="text" id="mainKeywordInput" placeholder="自訂全域主視覺關鍵詞 (選填)">
+        </div>
+
         <div class="editor-wrapper"><div id="promptInput" contenteditable="true" data-placeholder="輸入需排版的原文或段落...也可以點擊上方按鍵插入分頁。"></div></div>
         <button id="generateBtn" class="btn">GENERATE</button>
     </div>
 
     <div class="main-content">
         <div class="action-bar" id="actionBar" style="display: none;">
+            
+            <div class="sub-keyword-group" id="subKeywordGroup" title="自訂此頁子關鍵詞並重整圖片">
+                <input type="text" id="subKeywordInput" placeholder="當前頁子關鍵詞 (選填)">
+                <button class="btn-refresh-img" id="btnRefreshImg" title="依此關鍵詞重新生成"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 1 0 2.63-6.37L21 8"></path></svg></button>
+            </div>
+
             <div class="opacity-control" title="調整背景濃度">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20v-20z" fill="currentColor" opacity="0.3"/></svg>
                 <input type="range" id="opacitySlider" min="0" max="100" value="20">
@@ -237,6 +287,10 @@
 
         const generateBtn = document.getElementById('generateBtn');
         const promptInput = document.getElementById('promptInput');
+        const mainKeywordInput = document.getElementById('mainKeywordInput');
+        const subKeywordInput = document.getElementById('subKeywordInput');
+        const subKeywordGroup = document.getElementById('subKeywordGroup');
+        const btnRefreshImg = document.getElementById('btnRefreshImg');
         const presentationBoard = document.getElementById('presentationBoard');
         const controls = document.getElementById('controls');
         const prevBtn = document.getElementById('prevBtn');
@@ -250,10 +304,10 @@
         const loaderStageText = document.getElementById('loadingStageText');
         
         let isAiMode = false, useTitleInStrict = false, slides = [], currentIndex = 0;
+        let globalMainKeyword = "藝術排版";
         let usedQueries = new Set(); 
         
-        // 攝影意境修改詞庫 (用於強制改變 Bing 搜尋結果)
-        const photoStyles = ["光影", "構圖", "特寫", "遠景", "虛化", "色彩", "黑白", "靜物", "幾何", "對比", "極簡", "氛圍", "質感", "視角", "留白"];
+        const stopWords = new Set(["的","了","和","是","就","都","而","及","與","著","或","一個","沒有","我們","你們","他們","這個","那個","因為","所以","雖然","但是","如果","那麼","可以","就是","這","那","哪","啊","呢","嗎","吧","也","很","在","從","到","讓","被","對","會","能","要","去","有","把","給"]);
 
         opacitySlider.addEventListener('input', (e) => document.documentElement.style.setProperty('--bg-opacity', (0.02 + (e.target.value / 100) * 0.23).toFixed(3)));
         document.getElementById('modeToggle').addEventListener('click', function() { isAiMode = !isAiMode; document.getElementById('icon-magic').style.display = isAiMode ? "block" : "none"; document.getElementById('icon-lock').style.display = isAiMode ? "none" : "block"; isAiMode ? this.classList.add('active-mode') : this.classList.remove('active-mode'); });
@@ -277,27 +331,61 @@
             if (cur) chunks.push(cur); return chunks;
         }
 
-        // 強制改變搜尋關鍵字以確保 Bing 絕對不重複
-        function getImageUrl(main, snippet, idx) {
-            let cleanMain = (main || "藝術").replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, ' ').trim().substring(0, 15);
-            let cleanSnip = (snippet && snippet.length > 2) ? snippet.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, ' ').trim().substring(0, 15) : "";
-            let baseQuery = cleanMain; 
-            if (cleanSnip && !cleanMain.includes(cleanSnip)) baseQuery = `${cleanMain} ${cleanSnip}`;
-            
-            // 加入意境修飾詞，強制每一頁的搜尋字串都不一樣
-            let styleModifier = photoStyles[idx % photoStyles.length];
-            let finalQuery = `${baseQuery} 攝影 ${styleModifier} -字`;
-
-            // 雙重保險：如果這個完全一樣的搜尋字串真的用過了，就再疊加頁碼破壞字串結構
-            while (usedQueries.has(finalQuery)) {
-                let randomStyle = photoStyles[Math.floor(Math.random() * photoStyles.length)];
-                finalQuery = `${baseQuery} 攝影 ${randomStyle} 幻境 ${idx} -字`;
-            }
-            usedQueries.add(finalQuery);
-
-            let cacheBuster = Date.now() + idx; 
-            return `https://tse${(idx % 4) + 1}.mm.bing.net/th?q=${encodeURIComponent(finalQuery)}&w=1200&h=1200&c=7&rs=1&pid=Api&mkt=zh-TW&nocache=${cacheBuster}`;
+        // 提取內文關鍵詞
+        function extractKeywords(text, maxWords = 2) {
+            if (!text) return "";
+            if (typeof Intl.Segmenter !== 'function') return text.replace(/[^\u4e00-\u9fa5]/g, '').substring(0, 4);
+            const segmenter = new Intl.Segmenter('zh-TW', { granularity: 'word' });
+            const segments = [...segmenter.segment(text)];
+            const words = segments.filter(s => s.isWordLike).map(s => s.segment).filter(w => w.length >= 2 && !stopWords.has(w));
+            return [...new Set(words)].slice(0, maxWords).join(" ");
         }
+
+        // 僅依賴主關鍵詞及子關鍵詞進行搜索
+        function getImageUrl(mainKw, subKw, index) {
+            let baseQuery = mainKw || "設計";
+            if (subKw && !baseQuery.includes(subKw)) baseQuery = `${baseQuery} ${subKw}`;
+
+            let finalQuery = baseQuery.trim();
+
+            let cacheBuster = Date.now() + index; 
+            return `https://tse${(index % 4) + 1}.mm.bing.net/th?q=${encodeURIComponent(finalQuery)}&w=1200&h=1200&c=7&rs=1&pid=Api&mkt=zh-TW&nocache=${cacheBuster}`;
+        }
+
+        // --- 核心刷新圖片邏輯 (點擊圖片或更改子關鍵詞時觸發) ---
+        let manualRefreshIndex = 100; 
+        function refreshImage(imgEl) {
+            if(imgEl.classList.contains('reloading')) return;
+            imgEl.classList.add('reloading');
+            
+            let mKw = imgEl.getAttribute('data-main');
+            let sKw = imgEl.getAttribute('data-sub'); 
+            
+            manualRefreshIndex++; 
+            let newSrc = getImageUrl(mKw, sKw, manualRefreshIndex);
+            
+            let tempImg = new Image();
+            tempImg.crossOrigin = "anonymous";
+            tempImg.onload = () => { imgEl.src = newSrc; imgEl.classList.remove('reloading'); };
+            tempImg.onerror = () => { imgEl.classList.remove('reloading'); };
+            tempImg.src = newSrc;
+        }
+
+        function triggerCurrentSlideRefresh() {
+            if (slides.length === 0) return;
+            let currentSlide = slides[currentIndex];
+            let imgEl = currentSlide.querySelector('.art-frame img');
+            if (imgEl) {
+                let newSub = subKeywordInput.value.trim();
+                imgEl.setAttribute('data-sub', newSub); 
+                refreshImage(imgEl); 
+            }
+        }
+        
+        btnRefreshImg.addEventListener('click', triggerCurrentSlideRefresh);
+        subKeywordInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); triggerCurrentSlideRefresh(); }
+        });
 
         // 文字自適應縮放引擎：確保長文字不會超出框框，無須滾動
         function autoFitText() {
@@ -305,8 +393,6 @@
             wrappers.forEach(wrapper => {
                 let scale = 1.0;
                 wrapper.style.setProperty('--text-scale', scale);
-                
-                // 檢查如果內容超出容器，就逐步縮小字體比例 (最低縮到 40%)
                 while (wrapper.scrollHeight > wrapper.clientHeight && scale > 0.4) {
                     scale -= 0.05;
                     wrapper.style.setProperty('--text-scale', scale);
@@ -324,31 +410,38 @@
 
         generateBtn.addEventListener('click', async () => {
             const rawHTML = promptInput.innerHTML.trim(); if (!promptInput.innerText.trim() && !rawHTML) return;
-            generateBtn.disabled = true; showLoader("提煉文學脈絡..."); controls.style.display = "none"; actionBar.style.display = "none";
+            generateBtn.disabled = true; showLoader("正在自動分頁..."); controls.style.display = "none"; actionBar.style.display = "none";
             
-            usedQueries.clear(); // 每次生成清空搜尋紀錄
+            usedQueries.clear();
 
             await new Promise(r => setTimeout(r, 600));
 
             try {
-                let finalHtml = "", chunks = [], topic = "藝術排版";
+                let finalHtml = "", chunks = [];
                 if (rawHTML.includes('page-break-line')) {
                     const parts = rawHTML.split(/<div class="page-break-line".*?<\/div>/gi);
                     const temp = document.createElement('div');
                     parts.forEach(p => { temp.innerHTML = p.replace(/<br\s*\/?>/gi, '\n'); let t = temp.innerText.trim(); if (t) chunks.push(...splitIntoChunks(t, 95)); });
                 } else chunks = splitIntoChunks(promptInput.innerText.trim(), 95);
 
-                if(chunks.length > 0) topic = chunks[0].substring(0, 15).replace(/\n/g, ' ');
+                // --- 判斷主關鍵詞 ---
+                let userMainInput = mainKeywordInput.value.trim();
+                if (userMainInput) {
+                    globalMainKeyword = userMainInput;
+                } else if(chunks.length > 0) {
+                    let extracted = extractKeywords(chunks[0], 2);
+                    globalMainKeyword = extracted ? extracted : "視覺藝術";
+                }
 
                 if (!isAiMode) {
                     if (!useTitleInStrict) { finalHtml = chunks.map(c => `<div class="slide"><p>${c.replace(/\n/g, '<br>')}</p></div>`).join("\n"); } 
                     else {
-                        showLoader("構築排版意境標題...");
+                        showLoader("正在排版...");
                         const prompt = `為以下${chunks.length}段落產生極短的繁體中文標題(不超過8個字)。只輸出JSON陣列，如:["標一","標二"]`;
                         try {
                             const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEYS[0]}` }, body: JSON.stringify({ model: MODEL, messages: [ { role: "system", content: prompt }, { role: "user", content: chunks.map((c,i)=>`[段${i+1}] ${c}`).join("\n") } ] }) });
                             const data = await res.json(); let titles = JSON.parse(data.choices[0].message.content.replace(/```json/gi, '').replace(/```/gi, '').trim());
-                            while(titles.length < chunks.length) titles.push(topic);
+                            while(titles.length < chunks.length) titles.push(globalMainKeyword);
                             finalHtml = chunks.map((c, i) => `<div class="slide"><h2>${titles[i]}</h2><p>${c.replace(/\n/g, '<br>')}</p></div>`).join("\n");
                         } catch(e) { finalHtml = chunks.map((c, i) => `<div class="slide"><h2>章節 ${i+1}</h2><p>${c.replace(/\n/g, '<br>')}</p></div>`).join("\n"); }
                     }
@@ -360,11 +453,10 @@
                     finalHtml = (await res.json()).choices[0].message.content.replace(/```html/gi, '').replace(/```/gi, '').trim();
                 }
 
-                showLoader("渲染最終視覺意境...");
+                showLoader("正在加插圖片...");
                 await new Promise(r => setTimeout(r, 600));
-                renderPresentation(finalHtml, topic);
+                renderPresentation(finalHtml);
 
-                // 在渲染完成並掛載到 DOM 後，執行文字自適應縮放
                 setTimeout(autoFitText, 100);
 
             } catch (error) { presentationBoard.innerHTML = `<div class="empty-state"><p>發生錯誤，請稍後再試</p></div>`; } 
@@ -373,7 +465,7 @@
 
         const layouts = ['layout-img-right', 'layout-overlap-left', 'layout-center', 'layout-img-left', 'layout-bottom-text', 'layout-overlap-right'];
 
-        function renderPresentation(htmlContent, mainTopic) {
+        function renderPresentation(htmlContent) {
             const tempDiv = document.createElement('div'); tempDiv.innerHTML = htmlContent;
             presentationBoard.innerHTML = '';
             const rawSlides = tempDiv.querySelectorAll('.slide');
@@ -400,8 +492,25 @@
                     const imgWrapper = document.createElement('div'); imgWrapper.className = 'feature-img-wrapper';
                     const artFrame = document.createElement('div'); artFrame.className = 'art-frame';
                     const featureImg = document.createElement('img'); featureImg.crossOrigin = "anonymous";
-                    // 永遠調用 getImageUrl，裡面確保使用 Bing API 並強制修改子關鍵字防重複
-                    featureImg.src = getImageUrl(mainTopic, p ? p.innerText : "", index);
+                    
+                    let subKeyword = "";
+                    if(p && p.innerText) subKeyword = extractKeywords(p.innerText, 2);
+                    
+                    // 帶入主/子關鍵詞與索引進行取圖
+                    featureImg.src = getImageUrl(globalMainKeyword, subKeyword, index);
+                    
+                    // 綁定資料以便重新刷新
+                    featureImg.setAttribute('data-main', globalMainKeyword);
+                    featureImg.setAttribute('data-sub', subKeyword);
+                    featureImg.title = "點選圖片 或 透過上方變更關鍵詞來重整圖片";
+                    
+                    featureImg.addEventListener('click', function() {
+                        if (subKeywordGroup.style.display !== 'none') {
+                            this.setAttribute('data-sub', subKeywordInput.value.trim());
+                        }
+                        refreshImage(this);
+                    });
+
                     artFrame.appendChild(featureImg); imgWrapper.appendChild(artFrame); newSlide.appendChild(imgWrapper);
                 }
 
@@ -413,16 +522,44 @@
             currentIndex = 0; updateSlides(); controls.style.display = "flex"; actionBar.style.display = "flex"; totalSlideNum.innerText = slides.length;
         }
 
-        function updateSlides() { slides.forEach((s, i) => s.classList.toggle('active', i === currentIndex)); currentSlideNum.innerText = currentIndex + 1; }
+        function updateSlides() { 
+            slides.forEach((s, i) => s.classList.toggle('active', i === currentIndex)); 
+            currentSlideNum.innerText = currentIndex + 1; 
+
+            // 同步子關鍵詞欄位
+            let currentSlide = slides[currentIndex];
+            let currentImg = currentSlide.querySelector('.art-frame img');
+            if (currentImg) {
+                subKeywordGroup.style.display = 'flex';
+                subKeywordInput.value = currentImg.getAttribute('data-sub') || "";
+            } else {
+                subKeywordGroup.style.display = 'none';
+                subKeywordInput.value = "";
+            }
+        }
+
         prevBtn.addEventListener('click', () => { if (currentIndex > 0) { currentIndex--; updateSlides(); } });
         nextBtn.addEventListener('click', () => { if (currentIndex < slides.length - 1) { currentIndex++; updateSlides(); } });
-        document.addEventListener('keydown', (e) => { if (slides.length === 0) return; if (e.key === 'ArrowRight' && currentIndex < slides.length - 1) { currentIndex++; updateSlides(); } if (e.key === 'ArrowLeft' && currentIndex > 0) { currentIndex--; updateSlides(); } });
+        
+        // 鍵盤操控：如果焦點在輸入框，不觸發翻頁
+        document.addEventListener('keydown', (e) => { 
+            if (slides.length === 0) return; 
+            if (document.activeElement === subKeywordInput || document.activeElement === mainKeywordInput || document.activeElement === promptInput) return;
+            if (e.key === 'ArrowRight' && currentIndex < slides.length - 1) { currentIndex++; updateSlides(); } 
+            if (e.key === 'ArrowLeft' && currentIndex > 0) { currentIndex--; updateSlides(); } 
+        });
 
-        // --- 匯出 HTML (同步加入自適應縮放引擎) ---
+        // --- 匯出帶有響應式 RWD 的 HTML ---
         document.getElementById('btnExportHtml').addEventListener('click', () => {
             const currentOpacity = getComputedStyle(document.documentElement).getPropertyValue('--bg-opacity').trim();
-            const slideHtml = Array.from(slides).map(s => s.outerHTML).join('\n');
-            const exportHtml = `<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><title>AURA Presentation</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Noto+Serif+TC:wght@300;400;500;600&family=Inter:wght@200;300;400&display=swap" rel="stylesheet"><style>body { font-family: 'Inter', 'Noto Serif TC', serif; margin: 0; background: #000; display:flex; justify-content:center; align-items:center; height:100vh; overflow: hidden; }.wrapper { width: 100vw; max-width: 1920px; aspect-ratio: 16/9; position: relative; container-type: inline-size; background:#fff; overflow:hidden; }.slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(12, 1fr); gap: 2cqw; padding: 3cqw; box-sizing: border-box; overflow: hidden; }.slide.active { opacity: 1; z-index: 10; }.bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: ${currentOpacity}; filter: grayscale(100%); z-index: 1; }.text-content-wrapper { position: relative; z-index: 3; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(0, 0, 0, 0.05); padding: 3cqw 3.5cqw; box-shadow: 0 15px 40px rgba(0,0,0,0.06); }.text-content-wrapper::before, .text-content-wrapper::after { content: ''; position: absolute; width: 1.5cqw; height: 1.5cqw; border: 1px solid rgba(0,0,0,0.4); }.text-content-wrapper::before { top: 1cqw; left: 1cqw; border-right: none; border-bottom: none; }.text-content-wrapper::after { bottom: 1cqw; right: 1cqw; border-left: none; border-top: none; }.text-inner-scroll { overflow: hidden; width: 100%; max-height: 100%; display: flex; flex-direction: column; --text-scale: 1; }h1, h2, p, ul { margin: 0; text-align: left; word-break: break-word; overflow-wrap: break-word; }h1 { font-size: calc(clamp(3rem, 5cqw, 4.5rem) * var(--text-scale)); font-weight: 500; color: #111; margin-bottom: 0.5rem;}h2 { font-size: calc(clamp(2rem, 3.1cqw, 3rem) * var(--text-scale)); font-weight: 400; color: #666; letter-spacing: 4px;}p, ul { font-size: calc(clamp(1.4rem, 2.25cqw, 1.8rem) * var(--text-scale)); line-height: 2.1; color: #333; margin-top: 1rem; font-weight: 300; letter-spacing: 1px; }.feature-img-wrapper { position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }.art-frame { position: relative; padding: 0.8cqw; background: #fff; border: 1px solid #eee; box-shadow: 0 15px 45px rgba(0,0,0,0.1); width: 100%; height: 100%; display:flex; justify-content:center; align-items:center; }.art-frame::before { content: ''; position: absolute; inset: 0.4cqw; border: 1px solid rgba(0,0,0,0.06); }.art-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }.layout-img-left .feature-img-wrapper { grid-area: 2 / 1 / 12 / 6; }.layout-img-left .text-content-wrapper { grid-area: 3 / 6 / 11 / 13; }.layout-img-right .text-content-wrapper { grid-area: 3 / 1 / 11 / 8; }.layout-img-right .feature-img-wrapper { grid-area: 2 / 8 / 12 / 13; }.layout-overlap-left .feature-img-wrapper { grid-area: 1 / 4 / 13 / 13; }.layout-overlap-left .text-content-wrapper { grid-area: 4 / 1 / 10 / 7; z-index: 4; }.layout-overlap-right .feature-img-wrapper { grid-area: 1 / 1 / 13 / 10; }.layout-overlap-right .text-content-wrapper { grid-area: 5 / 7 / 11 / 13; z-index: 4; }.layout-center .text-content-wrapper { grid-area: 3 / 2 / 11 / 12; align-items: flex-start; justify-content: center;}.layout-center .feature-img-wrapper { display: none; }.layout-bottom-text .feature-img-wrapper { grid-area: 1 / 3 / 8 / 11; }.layout-bottom-text .text-content-wrapper { grid-area: 8 / 2 / 13 / 12; flex-direction: column; align-items: flex-start; justify-content: center; padding: 2cqw 4cqw;}.layout-bottom-text p { margin-top: 0; }.slide-number-indicator { position: absolute; bottom: 2cqw; right: 3cqw; font-size: 1.2cqw; font-family: 'Cinzel', serif; color: #999; letter-spacing: 0.2cqw; z-index: 5; }.ui-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 20px; }.icon-btn { background: transparent; border: none; width: 40px; height: 40px; cursor: pointer; color: #aaa; transition: 0.2s;}.icon-btn:hover { color: #fff; } .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1; }.counter { font-size: 0.85rem; font-family: 'Inter', sans-serif; color: #888; letter-spacing: 1px;}</style></head><body><div class="wrapper" id="board">${slideHtml}</div><div class="ui-bar"><button class="icon-btn" id="btn-prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button><div class="counter"><span id="num-curr">1</span> / <span id="num-tot">0</span></div><button class="icon-btn" id="btn-next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div><script>const slides = document.querySelectorAll('.slide'); const currEl = document.getElementById('num-curr'); document.getElementById('num-tot').innerText = slides.length; let c = 0; function update() { slides.forEach((s, i) => s.classList.toggle('active', i === c)); currEl.innerText = c + 1; } if(slides.length > 0) update(); document.getElementById('btn-prev').addEventListener('click', () => { if(c > 0) { c--; update(); }}); document.getElementById('btn-next').addEventListener('click', () => { if(c < slides.length - 1) { c++; update(); }}); document.addEventListener('keydown', (e) => { if(e.key === 'ArrowRight' && c < slides.length - 1) { c++; update(); } if(e.key === 'ArrowLeft' && c > 0) { c--; update(); }}); function autoFit() { document.querySelectorAll('.text-inner-scroll').forEach(w => { let s = 1.0; w.style.setProperty('--text-scale', s); while (w.scrollHeight > w.clientHeight && s > 0.4) { s -= 0.05; w.style.setProperty('--text-scale', s); } }); } setTimeout(autoFit, 100); window.addEventListener('resize', autoFit);<\/script></body></html>`;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = Array.from(slides).map(s => s.outerHTML).join('\n');
+            tempDiv.querySelectorAll('.art-frame img').forEach(img => {
+                img.removeAttribute('title'); img.removeAttribute('data-main'); img.removeAttribute('data-sub'); img.style.cursor = 'default';
+            });
+            const slideHtml = tempDiv.innerHTML;
+
+            const exportHtml = `<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>AURA Presentation</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Noto+Serif+TC:wght@300;400;500;600&family=Inter:wght@200;300;400&display=swap" rel="stylesheet"><style>body { font-family: 'Inter', 'Noto Serif TC', serif; margin: 0; background: #000; display:flex; justify-content:center; align-items:center; height:100vh; overflow: hidden; }.wrapper { width: 100vw; max-width: 1920px; aspect-ratio: 16/9; position: relative; container-type: inline-size; background:#fff; overflow:hidden; }.slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(12, 1fr); gap: 2cqw; padding: 3cqw; box-sizing: border-box; overflow: hidden; }.slide.active { opacity: 1; z-index: 10; }.bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: ${currentOpacity}; filter: grayscale(100%); z-index: 1; }.text-content-wrapper { position: relative; z-index: 3; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(0, 0, 0, 0.05); padding: 3cqw 3.5cqw; box-shadow: 0 15px 40px rgba(0,0,0,0.06); }.text-content-wrapper::before, .text-content-wrapper::after { content: ''; position: absolute; width: 1.5cqw; height: 1.5cqw; border: 1px solid rgba(0,0,0,0.4); }.text-content-wrapper::before { top: 1cqw; left: 1cqw; border-right: none; border-bottom: none; }.text-content-wrapper::after { bottom: 1cqw; right: 1cqw; border-left: none; border-top: none; }.text-inner-scroll { overflow: hidden; width: 100%; max-height: 100%; display: flex; flex-direction: column; --text-scale: 1; }h1, h2, p, ul { margin: 0; text-align: left; word-break: break-word; overflow-wrap: break-word; }h1 { font-size: calc(clamp(3rem, 5cqw, 4.5rem) * var(--text-scale)); font-weight: 500; color: #111; margin-bottom: 0.5rem;}h2 { font-size: calc(clamp(2rem, 3.1cqw, 3rem) * var(--text-scale)); font-weight: 400; color: #666; letter-spacing: 4px;}p, ul { font-size: calc(clamp(1.4rem, 2.25cqw, 1.8rem) * var(--text-scale)); line-height: 2.1; color: #333; margin-top: 1rem; font-weight: 300; letter-spacing: 1px; }.feature-img-wrapper { position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }.art-frame { position: relative; padding: 0.8cqw; background: #fff; border: 1px solid #eee; box-shadow: 0 15px 45px rgba(0,0,0,0.1); width: 100%; height: 100%; display:flex; justify-content:center; align-items:center; }.art-frame::before { content: ''; position: absolute; inset: 0.4cqw; border: 1px solid rgba(0,0,0,0.06); }.art-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }.layout-img-left .feature-img-wrapper { grid-area: 2 / 1 / 12 / 6; }.layout-img-left .text-content-wrapper { grid-area: 3 / 6 / 11 / 13; }.layout-img-right .text-content-wrapper { grid-area: 3 / 1 / 11 / 8; }.layout-img-right .feature-img-wrapper { grid-area: 2 / 8 / 12 / 13; }.layout-overlap-left .feature-img-wrapper { grid-area: 1 / 4 / 13 / 13; }.layout-overlap-left .text-content-wrapper { grid-area: 4 / 1 / 10 / 7; z-index: 4; }.layout-overlap-right .feature-img-wrapper { grid-area: 1 / 1 / 13 / 10; }.layout-overlap-right .text-content-wrapper { grid-area: 5 / 7 / 11 / 13; z-index: 4; }.layout-center .text-content-wrapper { grid-area: 3 / 2 / 11 / 12; align-items: flex-start; justify-content: center;}.layout-center .feature-img-wrapper { display: none; }.layout-bottom-text .feature-img-wrapper { grid-area: 1 / 3 / 8 / 11; }.layout-bottom-text .text-content-wrapper { grid-area: 8 / 2 / 13 / 12; flex-direction: column; align-items: flex-start; justify-content: center; padding: 2cqw 4cqw;}.layout-bottom-text p { margin-top: 0; }.slide-number-indicator { position: absolute; bottom: 2cqw; right: 3cqw; font-size: 1.2cqw; font-family: 'Cinzel', serif; color: #999; letter-spacing: 0.2cqw; z-index: 5; }.ui-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 20px; }.icon-btn { background: transparent; border: none; width: 40px; height: 40px; cursor: pointer; color: #aaa; transition: 0.2s;}.icon-btn:hover { color: #fff; } .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1; }.counter { font-size: 0.85rem; font-family: 'Inter', sans-serif; color: #888; letter-spacing: 1px;} @media (max-width: 900px) { .wrapper { width: 100%; height: auto; aspect-ratio: auto; min-height: 100vh; display: block; overflow-y: auto;} .slide { position: relative; opacity: 1; display: none; grid-template-columns: 1fr; grid-template-rows: auto auto; padding: 2rem; height: 100vh; overflow-y: auto; } .slide.active { display: grid; } .layout-img-left .feature-img-wrapper, .layout-img-right .feature-img-wrapper, .layout-overlap-left .feature-img-wrapper, .layout-overlap-right .feature-img-wrapper, .layout-bottom-text .feature-img-wrapper { grid-area: auto; height: 40vh; margin-bottom: 1rem; } .layout-img-left .text-content-wrapper, .layout-img-right .text-content-wrapper, .layout-overlap-left .text-content-wrapper, .layout-overlap-right .text-content-wrapper, .layout-center .text-content-wrapper, .layout-bottom-text .text-content-wrapper { grid-area: auto; padding: 2rem; } .slide-number-indicator { display: none; } .text-inner-scroll { overflow: visible; } h1, h2, p { font-size: unset !important; } h1 { font-size: 2rem !important; } h2 { font-size: 1.5rem !important; } p { font-size: 1.1rem !important; } }</style></head><body><div class="wrapper" id="board">${slideHtml}</div><div class="ui-bar"><button class="icon-btn" id="btn-prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button><div class="counter"><span id="num-curr">1</span> / <span id="num-tot">0</span></div><button class="icon-btn" id="btn-next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div><script>const slides = document.querySelectorAll('.slide'); const currEl = document.getElementById('num-curr'); document.getElementById('num-tot').innerText = slides.length; let c = 0; function update() { slides.forEach((s, i) => s.classList.toggle('active', i === c)); currEl.innerText = c + 1; } if(slides.length > 0) update(); document.getElementById('btn-prev').addEventListener('click', () => { if(c > 0) { c--; update(); }}); document.getElementById('btn-next').addEventListener('click', () => { if(c < slides.length - 1) { c++; update(); }}); document.addEventListener('keydown', (e) => { if(e.key === 'ArrowRight' && c < slides.length - 1) { c++; update(); } if(e.key === 'ArrowLeft' && c > 0) { c--; update(); }}); function autoFit() { if(window.innerWidth <= 900) return; document.querySelectorAll('.text-inner-scroll').forEach(w => { let s = 1.0; w.style.setProperty('--text-scale', s); while (w.scrollHeight > w.clientHeight && s > 0.4) { s -= 0.05; w.style.setProperty('--text-scale', s); } }); } setTimeout(autoFit, 100); window.addEventListener('resize', autoFit);<\/script></body></html>`;
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportHtml], { type: 'text/html' })); a.download = 'AURA_Presentation.html'; a.click();
         });
 
