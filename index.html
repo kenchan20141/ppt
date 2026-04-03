@@ -16,6 +16,7 @@
             --text-muted: #888888;
             --border: #eaeaea;
             --bg-opacity: 0.08; 
+            --hl-color: #D97706; /* 重點高光顏色 */
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,6 +56,9 @@
         .icon-toggle:hover { color: #111; background: #fafafa; border-color: #eee; }
         .icon-toggle.active-mode { color: #111; background: #f4f4f4; border-color: #e5e5e5; }
         .icon-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* Highlight 按鈕專屬特效 */
+        #highlightToggle.active-mode { color: var(--hl-color); background: #fff5eb; border-color: #fde6d0; }
 
         /* 主關鍵詞輸入框 */
         .keyword-input-wrapper { margin-bottom: 1.5rem; }
@@ -128,6 +132,10 @@
             --text-scale: 1; 
         }
         
+        /* 控制 AI 高光的顯示與隱藏 */
+        span[data-hl="true"] { transition: color 0.3s ease, font-weight 0.3s; color: inherit; font-weight: inherit; }
+        body.show-highlight span[data-hl="true"] { color: var(--hl-color); font-weight: 600; }
+
         .text-inner-scroll h1, .text-inner-scroll h2, .text-inner-scroll p, .text-inner-scroll ul { text-align: left; word-break: break-word; overflow-wrap: break-word; }
         .text-inner-scroll h1 { font-size: calc(clamp(2.8rem, 5cqw, 4rem) * var(--text-scale)); line-height: 1.2; font-weight: 500; color: #111; margin-bottom: 0.5rem;}
         .text-inner-scroll h2 { font-size: calc(clamp(1.8rem, 3.1cqw, 2.5rem) * var(--text-scale)); font-weight: 400; color: #666; letter-spacing: 4px;}
@@ -234,6 +242,12 @@
     <div class="sidebar">
         <div class="brand">AURA</div>
         <div class="toolbar">
+            <div class="icon-toggle" id="highlightToggle" title="開啟/關閉自動畫重點 (Highlight)">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20.707 5.826l-3.535-3.536a1 1 0 0 0-1.414 0l-1.414 1.414 4.95 4.95 1.414-1.414a1 1 0 0 0 0-1.414zM4.929 17.657l4.95 4.95-6.364.707a1 1 0 0 1-1.1-1.1l.707-6.364 1.807 1.807z"></path>
+                    <path d="M6.343 16.243l9.9-9.9 4.95 4.95-9.9 9.9-4.95-4.95z" opacity="0.3"></path>
+                </svg>
+            </div>
             <div class="icon-toggle" id="pageBreakBtn" title="插入圖形分頁標記 (強制從此處分頁)"><svg viewBox="0 0 24 24"><path d="M5 12h14M8 7l-3 5 3 5m8-10l3 5-3 5" stroke-width="2"></path></svg></div>
             <div class="icon-toggle active-mode" id="titleToggle" style="display: flex;" title="開啟/關閉自動產生標題">
                 <svg id="icon-title-on" viewBox="0 0 24 24" style="display: none;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="7" y1="8" x2="17" y2="8" stroke-width="2.5"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>
@@ -303,11 +317,13 @@
         const loaderScreen = document.getElementById('fullscreenLoader');
         const loaderStageText = document.getElementById('loadingStageText');
         
-        let isAiMode = false, useTitleInStrict = false, slides = [], currentIndex = 0;
+        let isAiMode = false, useTitleInStrict = false, isHighlightMode = false;
+        let slides = [], currentIndex = 0;
         let globalMainKeyword = "藝術排版";
+        let currentGeneratedHTML = ""; 
         let usedQueries = new Set(); 
         
-        // 擴展停用詞庫：加入更多中英文無意義詞彙
+        // 擴展停用詞庫 
         const stopWords = new Set([
             "的","了","和","是","就","都","而","及","與","著","或","一個","沒有","我們","你們","他們",
             "這個","那個","因為","所以","雖然","但是","如果","那麼","可以","就是","這","那","哪","啊","呢",
@@ -319,6 +335,18 @@
         opacitySlider.addEventListener('input', (e) => document.documentElement.style.setProperty('--bg-opacity', (0.02 + (e.target.value / 100) * 0.23).toFixed(3)));
         document.getElementById('modeToggle').addEventListener('click', function() { isAiMode = !isAiMode; document.getElementById('icon-magic').style.display = isAiMode ? "block" : "none"; document.getElementById('icon-lock').style.display = isAiMode ? "none" : "block"; isAiMode ? this.classList.add('active-mode') : this.classList.remove('active-mode'); });
         document.getElementById('titleToggle').addEventListener('click', function() { useTitleInStrict = !useTitleInStrict; document.getElementById('icon-title-on').style.display = useTitleInStrict ? "block" : "none"; document.getElementById('icon-title-off').style.display = useTitleInStrict ? "none" : "block"; useTitleInStrict ? this.classList.remove('active-mode') : this.classList.add('active-mode'); });
+        
+        // Highlight 畫重點切換按鈕 (利用 body class 瞬間切換)
+        document.getElementById('highlightToggle').addEventListener('click', function() { 
+            isHighlightMode = !isHighlightMode; 
+            this.classList.toggle('active-mode', isHighlightMode); 
+            if (isHighlightMode) {
+                document.body.classList.add('show-highlight');
+            } else {
+                document.body.classList.remove('show-highlight');
+            }
+        });
+
         pageBreakBtn.addEventListener('mousedown', (e) => e.preventDefault());
         pageBreakBtn.addEventListener('click', () => {
             promptInput.focus(); const selection = window.getSelection();
@@ -338,101 +366,64 @@
             if (cur) chunks.push(cur); return chunks;
         }
 
-        // --- 升級版：提取單一最代表性子關鍵詞 (詞頻統計 + 支援中國數字 + 剔除年月日) ---
+        // --- 提取子關鍵詞 (純本地端) ---
         function extractKeywords(text) {
-            if (!text) return "";
-            
-            // 移除一般阿拉伯數字 (保留要求中說的：不要數字，但允許中國數字)
-            let cleanText = text.replace(/[0-9０-９]/g, '');
-            
-            // 判斷是否為年月日組合 (僅由中文數字與年月日號組成，且必須包含至少一個「年月日號」)
-            const isDatePattern = (str) => /^[一二三四五六七八九十百千萬億兆零〇年月日號]+$/.test(str) && /[年月日號]/.test(str);
+            let topWords = getTopKeywords(text, 1);
+            return topWords.length > 0 ? topWords[0] : "";
+        }
 
+        function getTopKeywords(text, count = 3) {
+            if (!text) return [];
+            let cleanText = text.replace(/[0-9０-９]/g, '');
+            const isDatePattern = (str) => /^[一二三四五六七八九十百千萬億兆零〇年月日號]+$/.test(str) && /[年月日號]/.test(str);
             let words = [];
 
             if (typeof Intl.Segmenter === 'function') {
-                // 同時支援中英文分詞
                 const segmenter = new Intl.Segmenter(['zh-TW', 'en'], { granularity: 'word' });
-                const segments = [...segmenter.segment(cleanText)];
-                
-                words = segments
-                    .filter(s => s.isWordLike)
-                    .map(s => s.segment.trim())
+                words = [...segmenter.segment(cleanText)]
+                    .filter(s => s.isWordLike).map(s => s.segment.trim())
                     .filter(w => {
                         let isEnglish = /^[a-zA-Z]+$/.test(w);
                         let isStopWord = stopWords.has(w.toLowerCase());
                         let isDate = isDatePattern(w);
-                        // 過濾：非停用詞、非日期組合，且（英文大於等於2字母 或 中文大於等於2字）
                         return !isStopWord && !isDate && ((isEnglish && w.length >= 2) || (!isEnglish && w.length >= 2));
                     });
             } else {
-                // 無支援 Segmenter 的備用方案
                 let enWords = cleanText.match(/[a-zA-Z]{2,}/g) || [];
                 let chText = cleanText.replace(/[^\u4e00-\u9fa5]/g, '');
                 let chWords = [];
-                for (let i = 0; i < chText.length - 1; i++) {
-                    chWords.push(chText.substring(i, i + 2));
-                }
-                words = [...enWords, ...chWords].filter(w => {
-                    return !stopWords.has(w.toLowerCase()) && !isDatePattern(w);
-                });
+                for (let i = 0; i < chText.length - 1; i++) chWords.push(chText.substring(i, i + 2));
+                words = [...enWords, ...chWords].filter(w => !stopWords.has(w.toLowerCase()) && !isDatePattern(w));
             }
 
-            if (words.length === 0) {
-                // 如果嚴格過濾後完全沒字，回退取第一段可用的文字段落（最多4個字）
-                let backupMatch = cleanText.match(/[\u4e00-\u9fa5a-zA-Z]+/g);
-                if(backupMatch && backupMatch.length > 0) return backupMatch[0].substring(0, 4);
-                return "";
-            }
-
-            // --- 透過詞頻統計(TF)選出最重要的一個詞 ---
             const frequency = {};
-            words.forEach(w => {
-                let key = w.toLowerCase();
-                frequency[key] = (frequency[key] || 0) + 1;
+            words.forEach(w => { frequency[w.toLowerCase()] = (frequency[w.toLowerCase()] || 0) + 1; });
+
+            let uniqueWords = Object.keys(frequency).sort((a, b) => {
+                if (frequency[b] === frequency[a]) return b.length - a.length;
+                return frequency[b] - frequency[a];
             });
 
-            let maxFreq = 0;
-            let bestWord = "";
-
-            for (let w in frequency) {
-                // 優先選擇詞頻最高的；若詞頻相同，選擇字數較長者（通常較具體、更具代表性）
-                if (frequency[w] > maxFreq) {
-                    maxFreq = frequency[w];
-                    bestWord = w;
-                } else if (frequency[w] === maxFreq && w.length > bestWord.length) {
-                    bestWord = w;
-                }
-            }
-
-            // 找回原始字串中的大小寫形式並回傳（唯一一個代表詞）
-            const finalWord = words.find(w => w.toLowerCase() === bestWord) || bestWord;
-            return finalWord;
+            let result = uniqueWords.slice(0, count).map(lw => words.find(w => w.toLowerCase() === lw));
+            return result.filter(Boolean);
         }
 
-        // 僅依賴主關鍵詞及子關鍵詞進行搜索
         function getImageUrl(mainKw, subKw, index) {
             let baseQuery = mainKw || "設計";
             if (subKw && !baseQuery.includes(subKw)) baseQuery = `${baseQuery} ${subKw}`;
-
             let finalQuery = baseQuery.trim();
-
             let cacheBuster = Date.now() + index; 
             return `https://tse${(index % 4) + 1}.mm.bing.net/th?q=${encodeURIComponent(finalQuery)}&w=1200&h=1200&c=7&rs=1&pid=Api&mkt=zh-TW&nocache=${cacheBuster}`;
         }
 
-        // --- 核心刷新圖片邏輯 (點擊圖片或更改子關鍵詞時觸發) ---
         let manualRefreshIndex = 100; 
         function refreshImage(imgEl) {
             if(imgEl.classList.contains('reloading')) return;
             imgEl.classList.add('reloading');
-            
             let mKw = imgEl.getAttribute('data-main');
             let sKw = imgEl.getAttribute('data-sub'); 
-            
             manualRefreshIndex++; 
             let newSrc = getImageUrl(mKw, sKw, manualRefreshIndex);
-            
             let tempImg = new Image();
             tempImg.crossOrigin = "anonymous";
             tempImg.onload = () => { imgEl.src = newSrc; imgEl.classList.remove('reloading'); };
@@ -456,7 +447,6 @@
             if (e.key === 'Enter') { e.preventDefault(); triggerCurrentSlideRefresh(); }
         });
 
-        // 文字自適應縮放引擎：確保長文字不會超出框框，無須滾動
         function autoFitText() {
             const wrappers = document.querySelectorAll('.text-inner-scroll');
             wrappers.forEach(wrapper => {
@@ -469,10 +459,7 @@
             });
         }
 
-        // 監聽視窗縮放，確保響應式排版隨時完美
-        window.addEventListener('resize', () => {
-            if (slides.length > 0) autoFitText();
-        });
+        window.addEventListener('resize', () => { if (slides.length > 0) autoFitText(); });
 
         function showLoader(text) { loaderStageText.innerText = text; loaderScreen.classList.add('active'); }
         function hideLoader() { loaderScreen.classList.remove('active'); }
@@ -481,6 +468,8 @@
             const rawHTML = promptInput.innerHTML.trim(); if (!promptInput.innerText.trim() && !rawHTML) return;
             generateBtn.disabled = true; showLoader("正在自動分頁..."); controls.style.display = "none"; actionBar.style.display = "none";
             
+            // 每次生成新簡報時，清空 SessionStorage 裡的已用關鍵詞紀錄
+            sessionStorage.clear();
             usedQueries.clear();
 
             await new Promise(r => setTimeout(r, 600));
@@ -493,12 +482,10 @@
                     parts.forEach(p => { temp.innerHTML = p.replace(/<br\s*\/?>/gi, '\n'); let t = temp.innerText.trim(); if (t) chunks.push(...splitIntoChunks(t, 95)); });
                 } else chunks = splitIntoChunks(promptInput.innerText.trim(), 95);
 
-                // --- 判斷主關鍵詞 ---
                 let userMainInput = mainKeywordInput.value.trim();
                 if (userMainInput) {
                     globalMainKeyword = userMainInput;
                 } else if(chunks.length > 0) {
-                    // 已修改為新版 API，不傳入數量參數
                     let extracted = extractKeywords(chunks[0]);
                     globalMainKeyword = extracted ? extracted : "視覺藝術";
                 }
@@ -523,10 +510,33 @@
                     finalHtml = (await res.json()).choices[0].message.content.replace(/```html/gi, '').replace(/```/gi, '').trim();
                 }
 
+                // --- 新增：AI 螢光筆語意分析 ---
+                  if (isHighlightMode) {
+                    showLoader("正在間劃重點...");
+                    const hlPrompt = `你是一個排版助手。請分析以下 HTML 結構，找出 <p> 或 <ul> 標籤內的文字，並根據語意將「最重要、最核心」的詞彙或短句用 <span data-hl="true"> 包圍。
+                    規則：
+                    1. 針對每一個 <div class="slide">，嚴格限制只能標記 1 到 3 個最重要的詞彙或短句。
+                    2. 絕對不要更改任何原本的 HTML 標籤結構或其他文字內容。
+                    3. 確保只用 <span data-hl="true"> 包圍，不可破壞 HTML 結構。
+                    4. 只輸出修改後的完整 HTML，不要任何 markdown 標記或解釋。`;
+                    
+                    try {
+                        const hlRes = await fetch(API_URL, { 
+                            method: 'POST', 
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEYS[0]}` }, 
+                            body: JSON.stringify({ model: MODEL, messages: [ { role: "system", content: hlPrompt }, { role: "user", content: finalHtml } ] }) 
+                        });
+                        const hlData = await hlRes.json();
+                        finalHtml = hlData.choices[0].message.content.replace(/```html/gi, '').replace(/```/gi, '').trim();
+                    } catch(e) {
+                        console.warn("AI 劃重點失敗，沿用原文本");
+                    }
+                }
+
                 showLoader("正在加插圖片...");
+                currentGeneratedHTML = finalHtml;
                 await new Promise(r => setTimeout(r, 600));
                 renderPresentation(finalHtml);
-
                 setTimeout(autoFitText, 100);
 
             } catch (error) { presentationBoard.innerHTML = `<div class="empty-state"><p>發生錯誤，請稍後再試</p></div>`; } 
@@ -553,7 +563,10 @@
                 const scrollArea = document.createElement('div'); scrollArea.className = 'text-inner-scroll';
 
                 ['h1', 'h2', 'p', 'ul'].forEach(tag => {
-                    const el = slide.querySelector(tag); if(el) scrollArea.appendChild(el.cloneNode(true));
+                    const el = slide.querySelector(tag); 
+                    if(el) {
+                        scrollArea.appendChild(el.cloneNode(true));
+                    }
                 });
                 textWrapper.appendChild(scrollArea); newSlide.appendChild(textWrapper);
 
@@ -563,22 +576,53 @@
                     const artFrame = document.createElement('div'); artFrame.className = 'art-frame';
                     const featureImg = document.createElement('img'); featureImg.crossOrigin = "anonymous";
                     
-                    let subKeyword = "";
-                    // 取唯一代表性子關鍵詞
-                    if(p && p.innerText) subKeyword = extractKeywords(p.innerText);
+                    let initialSub = p && p.innerText ? extractKeywords(p.innerText) : "";
                     
-                    // 帶入主/子關鍵詞與索引進行取圖
-                    featureImg.src = getImageUrl(globalMainKeyword, subKeyword, index);
-                    
-                    // 綁定資料以便重新刷新
+                    featureImg.src = getImageUrl(globalMainKeyword, initialSub, index);
                     featureImg.setAttribute('data-main', globalMainKeyword);
-                    featureImg.setAttribute('data-sub', subKeyword);
-                    featureImg.title = "點選圖片 或 透過上方變更關鍵詞來重整圖片";
+                    featureImg.setAttribute('data-sub', initialSub);
+                    featureImg.title = "點擊圖片從該頁文字中提取不重複子關鍵詞並重新配圖";
                     
+                    // 點擊圖片純本地端提取不重複子關鍵詞
                     featureImg.addEventListener('click', function() {
-                        if (subKeywordGroup.style.display !== 'none') {
-                            this.setAttribute('data-sub', subKeywordInput.value.trim());
+                        if (this.classList.contains('reloading')) return;
+                        this.classList.add('reloading');
+
+                        let slideText = p ? p.innerText : "";
+                        if (!slideText.trim()) {
+                            this.classList.remove('reloading');
+                            return;
                         }
+
+                        let storageKey = `aura_slide_${index}_used_kws`;
+                        let usedKws = JSON.parse(sessionStorage.getItem(storageKey) || "[]");
+                        
+                        let currentSub = this.getAttribute('data-sub');
+                        if (currentSub && !usedKws.includes(currentSub)) usedKws.push(currentSub);
+
+                        // 提取頁面文字中前 20 個可能的關鍵詞
+                        let potentialKws = getTopKeywords(slideText, 20);
+                        
+                        // 尋找還沒被使用過的關鍵詞
+                        let newSub = potentialKws.find(kw => !usedKws.includes(kw));
+
+                        // 如果所有候選詞都被用過了，重置紀錄以避免卡死，並跳到下一個不等於當前詞的單字
+                        if (!newSub && potentialKws.length > 0) {
+                            usedKws = [currentSub].filter(Boolean); // 保留當前這個詞避免畫面沒變
+                            newSub = potentialKws.find(kw => kw !== currentSub) || potentialKws[0];
+                        }
+
+                        if (newSub) {
+                            usedKws.push(newSub);
+                            sessionStorage.setItem(storageKey, JSON.stringify(usedKws));
+
+                            this.setAttribute('data-sub', newSub);
+                            if (subKeywordGroup.style.display !== 'none' && slides[currentIndex] === newSlide) {
+                                subKeywordInput.value = newSub;
+                            }
+                        }
+
+                        this.classList.remove('reloading');
                         refreshImage(this);
                     });
 
@@ -590,14 +634,14 @@
             });
 
             slides = document.querySelectorAll('.slide'); if (slides.length === 0) return;
-            currentIndex = 0; updateSlides(); controls.style.display = "flex"; actionBar.style.display = "flex"; totalSlideNum.innerText = slides.length;
+            if(currentIndex >= slides.length) currentIndex = 0;
+            updateSlides(); controls.style.display = "flex"; actionBar.style.display = "flex"; totalSlideNum.innerText = slides.length;
         }
 
         function updateSlides() { 
             slides.forEach((s, i) => s.classList.toggle('active', i === currentIndex)); 
             currentSlideNum.innerText = currentIndex + 1; 
 
-            // 同步子關鍵詞欄位
             let currentSlide = slides[currentIndex];
             let currentImg = currentSlide.querySelector('.art-frame img');
             if (currentImg) {
@@ -612,7 +656,6 @@
         prevBtn.addEventListener('click', () => { if (currentIndex > 0) { currentIndex--; updateSlides(); } });
         nextBtn.addEventListener('click', () => { if (currentIndex < slides.length - 1) { currentIndex++; updateSlides(); } });
         
-        // 鍵盤操控：如果焦點在輸入框，不觸發翻頁
         document.addEventListener('keydown', (e) => { 
             if (slides.length === 0) return; 
             if (document.activeElement === subKeywordInput || document.activeElement === mainKeywordInput || document.activeElement === promptInput) return;
@@ -629,10 +672,31 @@
                 img.removeAttribute('title'); img.removeAttribute('data-main'); img.removeAttribute('data-sub'); img.style.cursor = 'default';
             });
             const slideHtml = tempDiv.innerHTML;
+            const highlightClass = isHighlightMode ? 'class="show-highlight"' : '';
 
-            const exportHtml = `<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>AURA Presentation</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Noto+Serif+TC:wght@300;400;500;600&family=Inter:wght@200;300;400&display=swap" rel="stylesheet"><style>body { font-family: 'Inter', 'Noto Serif TC', serif; margin: 0; background: #000; display:flex; justify-content:center; align-items:center; height:100vh; overflow: hidden; }.wrapper { width: 100vw; max-width: 1920px; aspect-ratio: 16/9; position: relative; container-type: inline-size; background:#fff; overflow:hidden; }.slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(12, 1fr); gap: 2cqw; padding: 3cqw; box-sizing: border-box; overflow: hidden; }.slide.active { opacity: 1; z-index: 10; }.bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: ${currentOpacity}; filter: grayscale(100%); z-index: 1; }.text-content-wrapper { position: relative; z-index: 3; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(0, 0, 0, 0.05); padding: 3cqw 3.5cqw; box-shadow: 0 15px 40px rgba(0,0,0,0.06); }.text-content-wrapper::before, .text-content-wrapper::after { content: ''; position: absolute; width: 1.5cqw; height: 1.5cqw; border: 1px solid rgba(0,0,0,0.4); }.text-content-wrapper::before { top: 1cqw; left: 1cqw; border-right: none; border-bottom: none; }.text-content-wrapper::after { bottom: 1cqw; right: 1cqw; border-left: none; border-top: none; }.text-inner-scroll { overflow: hidden; width: 100%; max-height: 100%; display: flex; flex-direction: column; --text-scale: 1; }h1, h2, p, ul { margin: 0; text-align: left; word-break: break-word; overflow-wrap: break-word; }h1 { font-size: calc(clamp(3rem, 5cqw, 4.5rem) * var(--text-scale)); font-weight: 500; color: #111; margin-bottom: 0.5rem;}h2 { font-size: calc(clamp(2rem, 3.1cqw, 3rem) * var(--text-scale)); font-weight: 400; color: #666; letter-spacing: 4px;}p, ul { font-size: calc(clamp(1.4rem, 2.25cqw, 1.8rem) * var(--text-scale)); line-height: 2.1; color: #333; margin-top: 1rem; font-weight: 300; letter-spacing: 1px; }.feature-img-wrapper { position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }.art-frame { position: relative; padding: 0.8cqw; background: #fff; border: 1px solid #eee; box-shadow: 0 15px 45px rgba(0,0,0,0.1); width: 100%; height: 100%; display:flex; justify-content:center; align-items:center; }.art-frame::before { content: ''; position: absolute; inset: 0.4cqw; border: 1px solid rgba(0,0,0,0.06); }.art-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }.layout-img-left .feature-img-wrapper { grid-area: 2 / 1 / 12 / 6; }.layout-img-left .text-content-wrapper { grid-area: 3 / 6 / 11 / 13; }.layout-img-right .text-content-wrapper { grid-area: 3 / 1 / 11 / 8; }.layout-img-right .feature-img-wrapper { grid-area: 2 / 8 / 12 / 13; }.layout-overlap-left .feature-img-wrapper { grid-area: 1 / 4 / 13 / 13; }.layout-overlap-left .text-content-wrapper { grid-area: 4 / 1 / 10 / 7; z-index: 4; }.layout-overlap-right .feature-img-wrapper { grid-area: 1 / 1 / 13 / 10; }.layout-overlap-right .text-content-wrapper { grid-area: 5 / 7 / 11 / 13; z-index: 4; }.layout-center .text-content-wrapper { grid-area: 3 / 2 / 11 / 12; align-items: flex-start; justify-content: center;}.layout-center .feature-img-wrapper { display: none; }.layout-bottom-text .feature-img-wrapper { grid-area: 1 / 3 / 8 / 11; }.layout-bottom-text .text-content-wrapper { grid-area: 8 / 2 / 13 / 12; flex-direction: column; align-items: flex-start; justify-content: center; padding: 2cqw 4cqw;}.layout-bottom-text p { margin-top: 0; }.slide-number-indicator { position: absolute; bottom: 2cqw; right: 3cqw; font-size: 1.2cqw; font-family: 'Cinzel', serif; color: #999; letter-spacing: 0.2cqw; z-index: 5; }.ui-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 20px; }.icon-btn { background: transparent; border: none; width: 40px; height: 40px; cursor: pointer; color: #aaa; transition: 0.2s;}.icon-btn:hover { color: #fff; } .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1; }.counter { font-size: 0.85rem; font-family: 'Inter', sans-serif; color: #888; letter-spacing: 1px;} @media (max-width: 900px) { .wrapper { width: 100%; height: auto; aspect-ratio: auto; min-height: 100vh; display: block; overflow-y: auto;} .slide { position: relative; opacity: 1; display: none; grid-template-columns: 1fr; grid-template-rows: auto auto; padding: 2rem; height: 100vh; overflow-y: auto; } .slide.active { display: grid; } .layout-img-left .feature-img-wrapper, .layout-img-right .feature-img-wrapper, .layout-overlap-left .feature-img-wrapper, .layout-overlap-right .feature-img-wrapper, .layout-bottom-text .feature-img-wrapper { grid-area: auto; height: 40vh; margin-bottom: 1rem; } .layout-img-left .text-content-wrapper, .layout-img-right .text-content-wrapper, .layout-overlap-left .text-content-wrapper, .layout-overlap-right .text-content-wrapper, .layout-center .text-content-wrapper, .layout-bottom-text .text-content-wrapper { grid-area: auto; padding: 2rem; } .slide-number-indicator { display: none; } .text-inner-scroll { overflow: visible; } h1, h2, p { font-size: unset !important; } h1 { font-size: 2rem !important; } h2 { font-size: 1.5rem !important; } p { font-size: 1.1rem !important; } }</style></head><body><div class="wrapper" id="board">${slideHtml}</div><div class="ui-bar"><button class="icon-btn" id="btn-prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button><div class="counter"><span id="num-curr">1</span> / <span id="num-tot">0</span></div><button class="icon-btn" id="btn-next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div><script>const slides = document.querySelectorAll('.slide'); const currEl = document.getElementById('num-curr'); document.getElementById('num-tot').innerText = slides.length; let c = 0; function update() { slides.forEach((s, i) => s.classList.toggle('active', i === c)); currEl.innerText = c + 1; } if(slides.length > 0) update(); document.getElementById('btn-prev').addEventListener('click', () => { if(c > 0) { c--; update(); }}); document.getElementById('btn-next').addEventListener('click', () => { if(c < slides.length - 1) { c++; update(); }}); document.addEventListener('keydown', (e) => { if(e.key === 'ArrowRight' && c < slides.length - 1) { c++; update(); } if(e.key === 'ArrowLeft' && c > 0) { c--; update(); }}); function autoFit() { if(window.innerWidth <= 900) return; document.querySelectorAll('.text-inner-scroll').forEach(w => { let s = 1.0; w.style.setProperty('--text-scale', s); while (w.scrollHeight > w.clientHeight && s > 0.4) { s -= 0.05; w.style.setProperty('--text-scale', s); } }); } setTimeout(autoFit, 100); window.addEventListener('resize', autoFit);<\/script></body></html>`;
+            const exportHtml = `<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>AURA Presentation</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Noto+Serif+TC:wght@300;400;500;600&family=Inter:wght@200;300;400&display=swap" rel="stylesheet"><style>body { font-family: 'Inter', 'Noto Serif TC', serif; margin: 0; background: #000; display:flex; justify-content:center; align-items:center; height:100vh; overflow: hidden; }.wrapper { width: 100vw; max-width: 1920px; aspect-ratio: 16/9; position: relative; container-type: inline-size; background:#fff; overflow:hidden; }.slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(12, 1fr); gap: 2cqw; padding: 3cqw; box-sizing: border-box; overflow: hidden; }.slide.active { opacity: 1; z-index: 10; }.bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: ${currentOpacity}; filter: grayscale(100%); z-index: 1; }.text-content-wrapper { position: relative; z-index: 3; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(0, 0, 0, 0.05); padding: 3cqw 3.5cqw; box-shadow: 0 15px 40px rgba(0,0,0,0.06); }.text-content-wrapper::before, .text-content-wrapper::after { content: ''; position: absolute; width: 1.5cqw; height: 1.5cqw; border: 1px solid rgba(0,0,0,0.4); }.text-content-wrapper::before { top: 1cqw; left: 1cqw; border-right: none; border-bottom: none; }.text-content-wrapper::after { bottom: 1cqw; right: 1cqw; border-left: none; border-top: none; }.text-inner-scroll { overflow: hidden; width: 100%; max-height: 100%; display: flex; flex-direction: column; --text-scale: 1; }span[data-hl="true"] { transition: color 0.3s ease, font-weight 0.3s; color: inherit; font-weight: inherit; } body.show-highlight span[data-hl="true"] { color: #D97706; font-weight: 600; } h1, h2, p, ul { margin: 0; text-align: left; word-break: break-word; overflow-wrap: break-word; }h1 { font-size: calc(clamp(3rem, 5cqw, 4.5rem) * var(--text-scale)); font-weight: 500; color: #111; margin-bottom: 0.5rem;}h2 { font-size: calc(clamp(2rem, 3.1cqw, 3rem) * var(--text-scale)); font-weight: 400; color: #666; letter-spacing: 4px;}p, ul { font-size: calc(clamp(1.4rem, 2.25cqw, 1.8rem) * var(--text-scale)); line-height: 2.1; color: #333; margin-top: 1rem; font-weight: 300; letter-spacing: 1px; }.feature-img-wrapper { position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }.art-frame { position: relative; padding: 0.8cqw; background: #fff; border: 1px solid #eee; box-shadow: 0 15px 45px rgba(0,0,0,0.1); width: 100%; height: 100%; display:flex; justify-content:center; align-items:center; }.art-frame::before { content: ''; position: absolute; inset: 0.4cqw; border: 1px solid rgba(0,0,0,0.06); }.art-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }.layout-img-left .feature-img-wrapper { grid-area: 2 / 1 / 12 / 6; }.layout-img-left .text-content-wrapper { grid-area: 3 / 6 / 11 / 13; }.layout-img-right .text-content-wrapper { grid-area: 3 / 1 / 11 / 8; }.layout-img-right .feature-img-wrapper { grid-area: 2 / 8 / 12 / 13; }.layout-overlap-left .feature-img-wrapper { grid-area: 1 / 4 / 13 / 13; }.layout-overlap-left .text-content-wrapper { grid-area: 4 / 1 / 10 / 7; z-index: 4; }.layout-overlap-right .feature-img-wrapper { grid-area: 1 / 1 / 13 / 10; }.layout-overlap-right .text-content-wrapper { grid-area: 5 / 7 / 11 / 13; z-index: 4; }.layout-center .text-content-wrapper { grid-area: 3 / 2 / 11 / 12; align-items: flex-start; justify-content: center;}.layout-center .feature-img-wrapper { display: none; }.layout-bottom-text .feature-img-wrapper { grid-area: 1 / 3 / 8 / 11; }.layout-bottom-text .text-content-wrapper { grid-area: 8 / 2 / 13 / 12; flex-direction: column; align-items: flex-start; justify-content: center; padding: 2cqw 4cqw;}.layout-bottom-text p { margin-top: 0; }.slide-number-indicator { position: absolute; bottom: 2cqw; right: 3cqw; font-size: 1.2cqw; font-family: 'Cinzel', serif; color: #999; letter-spacing: 0.2cqw; z-index: 5; }.ui-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 20px; }.icon-btn { background: transparent; border: none; width: 40px; height: 40px; cursor: pointer; color: #aaa; transition: 0.2s;}.icon-btn:hover { color: #fff; } .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1; }.counter { font-size: 0.85rem; font-family: 'Inter', sans-serif; color: #888; letter-spacing: 1px;} @media (max-width: 900px) { .wrapper { width: 100%; height: auto; aspect-ratio: auto; min-height: 100vh; display: block; overflow-y: auto;} .slide { position: relative; opacity: 1; display: none; grid-template-columns: 1fr; grid-template-rows: auto auto; padding: 2rem; height: 100vh; overflow-y: auto; } .slide.active { display: grid; } .layout-img-left .feature-img-wrapper, .layout-img-right .feature-img-wrapper, .layout-overlap-left .feature-img-wrapper, .layout-overlap-right .feature-img-wrapper, .layout-bottom-text .feature-img-wrapper { grid-area: auto; height: 40vh; margin-bottom: 1rem; } .layout-img-left .text-content-wrapper, .layout-img-right .text-content-wrapper, .layout-overlap-left .text-content-wrapper, .layout-overlap-right .text-content-wrapper, .layout-center .text-content-wrapper, .layout-bottom-text .text-content-wrapper { grid-area: auto; padding: 2rem; } .slide-number-indicator { display: none; } .text-inner-scroll { overflow: visible; } h1, h2, p { font-size: unset !important; } h1 { font-size: 2rem !important; } h2 { font-size: 1.5rem !important; } p { font-size: 1.1rem !important; } }</style></head><body ${highlightClass}><div class="wrapper" id="board">${slideHtml}</div><div class="ui-bar"><button class="icon-btn" id="btn-prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button><div class="counter"><span id="num-curr">1</span> / <span id="num-tot">0</span></div><button class="icon-btn" id="btn-next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div><script>const slides = document.querySelectorAll('.slide'); const currEl = document.getElementById('num-curr'); document.getElementById('num-tot').innerText = slides.length; let c = 0; function update() { slides.forEach((s, i) => s.classList.toggle('active', i === c)); currEl.innerText = c + 1; } if(slides.length > 0) update(); document.getElementById('btn-prev').addEventListener('click', () => { if(c > 0) { c--; update(); }}); document.getElementById('btn-next').addEventListener('click', () => { if(c < slides.length - 1) { c++; update(); }}); document.addEventListener('keydown', (e) => { if(e.key === 'ArrowRight' && c < slides.length - 1) { c++; update(); } if(e.key === 'ArrowLeft' && c > 0) { c--; update(); }}); function autoFit() { if(window.innerWidth <= 900) return; document.querySelectorAll('.text-inner-scroll').forEach(w => { let s = 1.0; w.style.setProperty('--text-scale', s); while (w.scrollHeight > w.clientHeight && s > 0.4) { s -= 0.05; w.style.setProperty('--text-scale', s); } }); } setTimeout(autoFit, 100); window.addEventListener('resize', autoFit);<\/script></body></html>`;
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportHtml], { type: 'text/html' })); a.download = 'AURA_Presentation.html'; a.click();
         });
+
+        // --- 將 HTML 段落轉換為 PptxGenJS 支援的混合文字陣列 (支援重點標記) ---
+        function parseHtmlToPptxTextRuns(htmlElement, defaultColor, font) {
+            let runs = [];
+            htmlElement.childNodes.forEach(node => {
+                if (node.nodeType === 3) { 
+                    if (node.textContent) runs.push({ text: node.textContent, options: { color: defaultColor, fontFace: font } });
+                } else if (node.nodeName === 'BR') {
+                    runs.push({ text: '\n' });
+                } else if (node.nodeName === 'SPAN' && node.dataset.hl) {
+                    // 若 PPT 匯出當下有開啟 Highlight 則變色，否則維持原色
+                    const runColor = isHighlightMode ? 'D97706' : defaultColor;
+                    const runBold = isHighlightMode ? true : false;
+                    runs.push({ text: node.innerText, options: { color: runColor, bold: runBold, fontFace: font } });
+                } else {
+                    runs.push({ text: node.innerText || node.textContent, options: { color: defaultColor, fontFace: font } });
+                }
+            });
+            return runs.length > 0 ? runs : [{ text: htmlElement.innerText, options: { color: defaultColor, fontFace: font } }];
+        }
 
         // --- 匯出 PPTX ---
         document.getElementById('btnExportPptx').addEventListener('click', () => {
@@ -675,7 +739,10 @@
                 
                 if(h1) { pptSlide.addText(h1.innerText, { x: txtX, y: curY, w: txtW, h:0.6, align: 'left', fontFace: font, fontSize: 36, color: '111111' }); curY += 0.7; }
                 if(h2) { pptSlide.addText(h2.innerText, { x: txtX, y: curY, w: txtW, h:0.4, align: 'left', fontFace: font, fontSize: 24, color: '666666' }); curY += 0.5; }
-                if(p) { pptSlide.addText(p.innerText, { x: txtX, y: curY, w: txtW, h: (boxY+boxH)-curY-0.2, align: 'left', valign: 'top', fontFace: font, fontSize: 16, color: '333333', lineSpacing: 25 }); }
+                if(p) { 
+                    let textRuns = parseHtmlToPptxTextRuns(p, '333333', font);
+                    pptSlide.addText(textRuns, { x: txtX, y: curY, w: txtW, h: (boxY+boxH)-curY-0.2, align: 'left', valign: 'top', fontFace: font, fontSize: 16, lineSpacing: 25 }); 
+                }
 
                 pptSlide.addText(String(index + 1).padStart(2, '0'), { x: 9.0, y: 5.1, w: 0.8, h: 0.4, align: 'right', fontFace: 'Cinzel', fontSize: 16, color: '999999' });
             });
