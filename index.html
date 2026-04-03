@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AUPT</title>
+    <title>AURA</title>
     <!-- 引入 PptxGenJS 引擎 -->
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
     <!-- 引入美學字體 -->
@@ -228,11 +228,11 @@
 
     <div class="fullscreen-loader" id="fullscreenLoader">
         <div class="cinematic-ring"></div>
-        <div class="loading-text-stage" id="loadingStageText">提煉文學脈絡...</div>
+        <div class="loading-text-stage" id="loadingStageText">正在自動分頁...</div>
     </div>
 
     <div class="sidebar">
-        <div class="brand">AUPT</div>
+        <div class="brand">AURA</div>
         <div class="toolbar">
             <div class="icon-toggle" id="pageBreakBtn" title="插入圖形分頁標記 (強制從此處分頁)"><svg viewBox="0 0 24 24"><path d="M5 12h14M8 7l-3 5 3 5m8-10l3 5-3 5" stroke-width="2"></path></svg></div>
             <div class="icon-toggle active-mode" id="titleToggle" style="display: flex;" title="開啟/關閉自動產生標題">
@@ -246,10 +246,10 @@
         </div>
         
         <div class="keyword-input-wrapper">
-            <input type="text" id="mainKeywordInput" placeholder="自訂全域主視覺關鍵詞 (選填)">
+            <input type="text" id="mainKeywordInput" placeholder="全域插圖關鍵詞">
         </div>
 
-        <div class="editor-wrapper"><div id="promptInput" contenteditable="true" data-placeholder="輸入需排版的原文或段落...也可以點擊上方按鍵插入分頁。"></div></div>
+        <div class="editor-wrapper"><div id="promptInput" contenteditable="true" data-placeholder="輸入需排版的原文或段落..."></div></div>
         <button id="generateBtn" class="btn">GENERATE</button>
     </div>
 
@@ -257,7 +257,7 @@
         <div class="action-bar" id="actionBar" style="display: none;">
             
             <div class="sub-keyword-group" id="subKeywordGroup" title="自訂此頁子關鍵詞並重整圖片">
-                <input type="text" id="subKeywordInput" placeholder="當前頁子關鍵詞 (選填)">
+                <input type="text" id="subKeywordInput" placeholder="子關鍵詞">
                 <button class="btn-refresh-img" id="btnRefreshImg" title="依此關鍵詞重新生成"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 1 0 2.63-6.37L21 8"></path></svg></button>
             </div>
 
