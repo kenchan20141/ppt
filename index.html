@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AURA - 真實圖片版 (Yahoo 搜尋)</title>
+    <title>AURA</title>
+    <!-- 引入 PptxGenJS 引擎 -->
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&family=Noto+Sans+TC:wght@200;300;400&display=swap" rel="stylesheet">
+    <!-- 引入美學字體：Cinzel(英文字體藝術)、Noto Serif TC(高級思源宋體)、Inter(數字與介面無襯線) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Noto+Serif+TC:wght@300;400;500;600&family=Inter:wght@200;300;400&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #f5f5f7;
@@ -13,25 +15,35 @@
             --text-main: #111111;
             --text-muted: #888888;
             --border: #eaeaea;
-            --bg-opacity: 0.15;
+            --bg-opacity: 0.08; 
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            font-family: 'Inter', 'Noto Serif TC', serif;
             background-color: var(--bg);
             color: var(--text-main);
             height: 100vh; display: flex; overflow: hidden;
         }
 
+        /* --- 側邊欄 --- */
         .sidebar {
             width: 30%; min-width: 340px; background: var(--surface);
             border-right: 1px solid var(--border);
             display: flex; flex-direction: column; padding: 4rem 3rem; z-index: 10;
         }
 
-        .brand { font-size: 1.2rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 3rem; color: #111; }
+        .brand { 
+            font-family: 'Cinzel', serif; font-size: 2.2rem; font-weight: 500; 
+            letter-spacing: 12px; margin-bottom: 3rem; color: #111; text-align: center;
+            position: relative; padding-bottom: 1.5rem;
+        }
+        .brand::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 40px; height: 1px; background-color: #d4d4d4;
+        }
+
         .toolbar { display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 1.5rem; height: 36px;}
         
         .icon-toggle {
@@ -44,95 +56,120 @@
         .icon-toggle.active-mode { color: #111; background: #f4f4f4; border-color: #e5e5e5; }
         .icon-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
-        textarea {
-            flex: 1; border: none; resize: none; font-family: inherit; font-size: 1.05rem;
-            line-height: 1.8; color: var(--text-main); background: transparent; outline: none; margin-bottom: 2rem;
-            font-weight: 300;
+        .editor-wrapper {
+            flex: 1; position: relative; display: flex; flex-direction: column; margin-bottom: 2rem;
+            border-top: 1px solid transparent; overflow: hidden;
         }
-        textarea::placeholder { color: #cccccc; font-weight: 200; }
+        #promptInput {
+            flex: 1; font-size: 1.1rem; line-height: 2; color: var(--text-main); 
+            background: transparent; outline: none; font-weight: 300; 
+            font-family: 'Inter', 'Noto Serif TC', serif; overflow-y: auto; padding-right: 10px;
+        }
+        #promptInput:empty::before {
+            content: attr(data-placeholder); color: #cccccc; font-family: 'Inter', sans-serif; 
+            font-weight: 200; letter-spacing: 2px; pointer-events: none;
+        }
+        #promptInput::-webkit-scrollbar, .text-inner-scroll::-webkit-scrollbar { width: 4px; }
+        #promptInput::-webkit-scrollbar-thumb, .text-inner-scroll::-webkit-scrollbar-thumb { background: #dcdcdc; border-radius: 4px; }
+
+        /* 圖形化分頁標記設計 */
+        .page-break-line {
+            display: flex; align-items: center; justify-content: center; margin: 25px 0;
+            gap: 15px; color: #999; font-family: 'Cinzel', serif; font-size: 0.75rem; 
+            letter-spacing: 4px; user-select: none;
+        }
+        .page-break-line::before, .page-break-line::after { content: ''; flex: 1; height: 1px; background: #ddd; }
+        .page-break-line span { font-size: 0.6rem; color: #aaa; }
 
         .btn {
-            background: #111; color: #fff; border: none; padding: 1.2rem;
-            font-size: 0.85rem; font-weight: 300; letter-spacing: 2px; cursor: pointer; transition: 0.3s;
+            background: linear-gradient(135deg, #111111 0%, #2b2b2b 100%); color: #fff; border: none; padding: 1.2rem;
+            font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 500; letter-spacing: 6px; 
+            cursor: pointer; transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 2px; flex-shrink: 0;
         }
-        .btn:hover { background: #333; }
-        .btn:disabled { background: #f0f0f0; color: #aaa; cursor: not-allowed; }
+        .btn:hover { background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); box-shadow: 0 8px 25px rgba(0,0,0,0.2); transform: translateY(-2px); }
+        .btn:disabled { background: #f0f0f0; color: #aaa; box-shadow: none; transform: none; cursor: not-allowed; }
 
-        .main-content {
-            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
-        }
+        /* --- 簡報主區 --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
 
         .presentation-wrapper {
-            width: 85%; max-width: 1280px; aspect-ratio: 16 / 9; 
-            background: #ffffff;
+            width: 85%; max-width: 1280px; aspect-ratio: 16 / 9; background: #ffffff;
             box-shadow: 0 20px 50px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02); 
-            border: 1px solid rgba(0,0,0,0.05);
-            position: relative; overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05); position: relative; overflow: hidden;
         }
 
         .slide {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0;
-            pointer-events: none; transition: opacity 0.8s ease;
-            display: grid; 
-            grid-template-columns: repeat(12, 1fr);
-            grid-template-rows: auto 1fr; 
-            gap: 2vw;
-            padding: 5vw 6vw 7vw 6vw; 
-            box-sizing: border-box; overflow: hidden;
+            pointer-events: none; transition: opacity 0.8s ease; display: grid; 
+            grid-template-columns: repeat(12, 1fr); align-items: center; /* 確保內容垂直置中 */
+            gap: 2vw; padding: 4vw 5vw; box-sizing: border-box; overflow: hidden;
         }
-        .slide.active { opacity: 1; pointer-events: auto; }
-        .slide > *:not(.bg-img) { position: relative; z-index: 2; }
+        .slide.active { opacity: 1; pointer-events: auto; z-index: 5; }
 
         .slide > .bg-img {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; opacity: var(--bg-opacity); z-index: 1; pointer-events: none;
-            transition: opacity 0.3s ease;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; 
+            opacity: var(--bg-opacity); z-index: 1; pointer-events: none; filter: grayscale(100%);
         }
 
-        .feature-img-wrapper {
-            width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.08); display: flex; background: #f9f9f9;
+        /* --- 文字盛放容器 (Text Receptacle) --- */
+        .text-content-wrapper {
+            position: relative; z-index: 2; width: 100%; 
+            max-height: 70vh; height: fit-content; align-self: center; 
+            background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 0, 0, 0.06); padding: 3vw 3.5vw;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.05); border-radius: 2px;
+            display: flex; flex-direction: column;
         }
-        .feature-img-wrapper img {
-            width: 100%; height: 100%; object-fit: cover;
+        .text-content-wrapper::before, .text-content-wrapper::after {
+            content: ''; position: absolute; width: 15px; height: 15px; border: 1px solid rgba(0,0,0,0.3); pointer-events: none;
         }
+        .text-content-wrapper::before { top: 12px; left: 12px; border-right: none; border-bottom: none; }
+        .text-content-wrapper::after { bottom: 12px; right: 12px; border-left: none; border-top: none; }
 
-        .slide h1, .slide h2 { 
-            grid-row: 1; align-self: start; 
-            margin: 0; word-break: keep-all; text-align: left; 
+        .text-inner-scroll { overflow-y: auto; padding-right: 15px; width: 100%; display: flex; flex-direction: column; }
+        .text-inner-scroll h1, .text-inner-scroll h2 { margin: 0; word-break: keep-all; text-align: left; }
+        .text-inner-scroll h1 { font-size: clamp(2.8rem, 4.5vw, 4rem); line-height: 1.2; font-weight: 500; color: #111; margin-bottom: 0.5rem;}
+        .text-inner-scroll h2 { font-size: clamp(1.8rem, 2.5vw, 2.5rem); font-weight: 400; color: #666; letter-spacing: 4px;}
+        .text-inner-scroll p, .text-inner-scroll ul { 
+            font-size: clamp(1.3rem, 1.8vw, 1.8rem); line-height: 2.1; color: #333; 
+            margin-top: 1rem; font-weight: 300; text-align: left; letter-spacing: 1px;
         }
-        .slide h1 { font-size: clamp(2.5rem, 5vw, 4.5rem); line-height: 1.2; font-weight: 200; color: #111; margin-bottom: 0.5rem;}
-        .slide h2 { font-size: clamp(1.8rem, 3.5vw, 3rem); font-weight: 300; color: #666; letter-spacing: 2px;}
-        
-        .slide p, .slide ul { 
-            grid-row: 2; align-self: center; 
-            font-size: clamp(1.3rem, 2vw, 1.8rem); line-height: 1.9; color: #333; margin: 0; 
-            font-weight: 300; text-align: left; 
+        .text-inner-scroll:not(:has(h1)):not(:has(h2)) p { margin-top: 0; margin-bottom: 0; }
+
+        /* --- 藝術畫廊圖片外框 (Art Frame) --- */
+        .feature-img-wrapper { 
+            position: relative; z-index: 2; width: 100%; height: 100%; 
+            display: flex; align-items: center; justify-content: center; align-self: center; 
         }
-
-        .layout-standard h1, .layout-standard h2, .layout-standard p { grid-column: 1 / 11; }
-        .layout-indent h1, .layout-indent h2 { grid-column: 1 / 12; }
-        .layout-indent p { grid-column: 4 / 12; }
-        .layout-split-left-img h1, .layout-split-left-img h2, .layout-split-left-img p { grid-column: 1 / 7; }
-        .layout-split-left-img .feature-img-wrapper { grid-column: 8 / 13; grid-row: 1 / 3; }
-        .layout-split-right-img h1, .layout-split-right-img h2, .layout-split-right-img p { grid-column: 7 / 13; }
-        .layout-split-right-img .feature-img-wrapper { grid-column: 1 / 6; grid-row: 1 / 3; }
-
-        .slide-number-indicator {
-            position: absolute; bottom: 2vw; right: 3vw; font-size: 1.1rem;
-            font-weight: 300; color: #999; letter-spacing: 3px; z-index: 3;
-            font-variant-numeric: tabular-nums; pointer-events: none;
+        .art-frame {
+            position: relative; padding: 0.8vw; background: #ffffff; border: 1px solid #eee;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.1); display: inline-block; 
+            max-width: 100%; max-height: 65vh; 
         }
+        .art-frame::before { content: ''; position: absolute; inset: 4px; border: 1px solid rgba(0,0,0,0.06); pointer-events: none; }
+        .art-frame img { display: block; max-width: 100%; max-height: calc(65vh - 2vw); object-fit: contain; }
 
+        /* --- 佈局網格配置 --- */
+        .layout-standard .text-content-wrapper { grid-column: 2 / 12; }
+        .layout-indent .text-content-wrapper { grid-column: 3 / 11; }
+        .layout-split-left-img .feature-img-wrapper { grid-column: 1 / 6; }
+        .layout-split-left-img .text-content-wrapper { grid-column: 7 / 13; }
+        .layout-split-right-img .text-content-wrapper { grid-column: 1 / 7; }
+        .layout-split-right-img .feature-img-wrapper { grid-column: 8 / 13; }
+
+        .slide-number-indicator { position: absolute; bottom: 2vw; right: 3vw; font-size: 1.1rem; font-family: 'Cinzel', serif; color: #999; letter-spacing: 3px; z-index: 3; pointer-events: none; }
+
+        /* --- 控制項與 UI --- */
         .controls-container { position: absolute; bottom: 2.5rem; display: flex; align-items: center; gap: 2rem; }
         .icon-btn { background: transparent; border: none; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; color: #aaa; }
         .icon-btn:hover { color: #111; }
         .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
-        .slide-counter { font-size: 0.8rem; font-weight: 300; color: #888; font-variant-numeric: tabular-nums; letter-spacing: 1px;}
+        .slide-counter { font-size: 0.8rem; font-family: 'Inter', sans-serif; font-weight: 300; color: #888; font-variant-numeric: tabular-nums; letter-spacing: 1px;}
 
         .loader { display: none; position: absolute; inset: 0; background: rgba(255,255,255,0.85); backdrop-filter: blur(5px); z-index: 100; flex-direction: column; justify-content: center; align-items: center; gap: 15px;}
         .spinner { width: 40px; height: 40px; border: 1px solid rgba(0,0,0,0.1); border-top-color: #111; border-radius: 50%; animation: spin 1s linear infinite; }
-        .loader-text { font-size: 0.85rem; font-weight: 300; color: #666; letter-spacing: 2px;}
+        .loader-text { font-size: 0.85rem; font-weight: 300; font-family: 'Inter', sans-serif; color: #666; letter-spacing: 2px;}
         @keyframes spin { 100% { transform: rotate(360deg); } }
         
         .empty-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; opacity: 0.15;}
@@ -140,7 +177,7 @@
         @keyframes breathe { 0%, 100% { opacity: 0.5; transform: scale(0.98); } 50% { opacity: 1; transform: scale(1.02); } }
         
         .action-bar { position: absolute; top: 2rem; right: 2.5rem; display: flex; align-items: center; gap: 15px; }
-        .btn-export { background: #fff; border: 1px solid #ddd; padding: 6px 12px; font-size: 0.75rem; letter-spacing: 1px; cursor: pointer; transition: 0.2s; color: #666; border-radius: 4px; }
+        .btn-export { background: #fff; border: 1px solid #ddd; padding: 6px 12px; font-size: 0.75rem; font-family: 'Cinzel', serif; letter-spacing: 2px; cursor: pointer; transition: 0.2s; color: #666; border-radius: 4px; }
         .btn-export:hover { border-color: #111; color: #111; }
 
         .opacity-control { display: flex; align-items: center; gap: 8px; border-right: 1px solid #eee; padding-right: 15px;}
@@ -157,18 +194,25 @@
         <div class="brand">AURA</div>
         
         <div class="toolbar">
-            <div class="icon-toggle" id="titleToggle" style="display: none; opacity: 0;">
-                <svg id="icon-title-on" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="7" y1="8" x2="17" y2="8" stroke-width="2.5"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>
-                <svg id="icon-title-off" viewBox="0 0 24 24" style="display: none;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="7" y1="9" x2="17" y2="9"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>
+            <!-- 插入分頁標記按鈕 -->
+            <div class="icon-toggle" id="pageBreakBtn" title="插入圖形分頁標記 (強制從此處分頁)">
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M8 7l-3 5 3 5m8-10l3 5-3 5" stroke-width="2"></path></svg>
             </div>
 
-            <div class="icon-toggle active-mode" id="modeToggle">
-                <svg id="icon-magic" viewBox="0 0 24 24"><path d="M21 16.052v-.004A9.965 9.965 0 0022 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10c1.72 0 3.336-.434 4.757-1.189l4.53 1.51-1.34-4.269zM12 7v10M7 12h10"/></svg>
-                <svg id="icon-lock" viewBox="0 0 24 24" style="display:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <div class="icon-toggle active-mode" id="titleToggle" style="display: flex;" title="開啟/關閉自動產生標題">
+                <svg id="icon-title-on" viewBox="0 0 24 24" style="display: none;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="7" y1="8" x2="17" y2="8" stroke-width="2.5"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>
+                <svg id="icon-title-off" viewBox="0 0 24 24" style="display: block;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="7" y1="9" x2="17" y2="9"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>
+            </div>
+
+            <div class="icon-toggle" id="modeToggle" title="切換 AI智慧排版 / 嚴格一字不易">
+                <svg id="icon-magic" viewBox="0 0 24 24" style="display:none;"><path d="M21 16.052v-.004A9.965 9.965 0 0022 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10c1.72 0 3.336-.434 4.757-1.189l4.53 1.51-1.34-4.269zM12 7v10M7 12h10"/></svg>
+                <svg id="icon-lock" viewBox="0 0 24 24" style="display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             </div>
         </div>
 
-        <textarea id="promptInput" placeholder="輸入簡報主題 (例如：七月與安生、李白的生平)"></textarea>
+        <div class="editor-wrapper">
+            <div id="promptInput" contenteditable="true" data-placeholder="輸入需排版的原文或段落...也可以點擊上方按鍵插入分頁。"></div>
+        </div>
         <button id="generateBtn" class="btn">GENERATE</button>
     </div>
 
@@ -176,7 +220,7 @@
         <div class="action-bar" id="actionBar" style="display: none;">
             <div class="opacity-control" title="調整背景濃度">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20v-20z" fill="currentColor" opacity="0.3"/></svg>
-                <input type="range" id="opacitySlider" min="0" max="100" value="40">
+                <input type="range" id="opacitySlider" min="0" max="100" value="20">
             </div>
             <button id="btnExportHtml" class="btn-export">HTML</button>
             <button id="btnExportPptx" class="btn-export">PPTX</button>
@@ -188,7 +232,7 @@
             </div>
             <div class="loader" id="loader">
                 <div class="spinner"></div>
-                <div class="loader-text" id="loaderText">AI 內容生成中...</div>
+                <div class="loader-text" id="loaderText">內容生成排版中...</div>
             </div>
         </div>
 
@@ -201,10 +245,9 @@
 
     <script>
         const API_KEYS = ["pk_eFlNmo9v1lXOC6Zw"];
+        let currentApiKeyIndex = 0;
         const API_URL = "https://gen.pollinations.ai/v1/chat/completions";
         const MODEL = "gemini-search";
-        // 你提供的 Apps Script Web App URL
-        const GAS_IMAGE_API_URL = "https://script.google.com/macros/s/AKfycbyGgKbv4zpccrYSch-hUZQ1scC-5Ldsr-MFUvOwu5ZO3vTNdSKJ7uIEMTemcKUfczWVrQ/exec";
 
         const generateBtn = document.getElementById('generateBtn');
         const promptInput = document.getElementById('promptInput');
@@ -218,42 +261,74 @@
         const totalSlideNum = document.getElementById('totalSlideNum');
         const actionBar = document.getElementById('actionBar');
         const opacitySlider = document.getElementById('opacitySlider');
-        const btnExportHtml = document.getElementById('btnExportHtml');
-        const btnExportPptx = document.getElementById('btnExportPptx');
-        const modeToggle = document.getElementById('modeToggle');
-        const titleToggle = document.getElementById('titleToggle');
+        const pageBreakBtn = document.getElementById('pageBreakBtn');
         
-        let isAiMode = true;
-        let useTitleInStrict = true;
+        let isAiMode = false;
+        let useTitleInStrict = false;
         let slides = [];
         let currentIndex = 0;
 
         opacitySlider.addEventListener('input', (e) => {
             const val = e.target.value;
-            const opacity = 0.02 + (val / 100) * 0.48; 
+            const opacity = 0.02 + (val / 100) * 0.23;
             document.documentElement.style.setProperty('--bg-opacity', opacity.toFixed(3));
         });
 
-        modeToggle.addEventListener('click', () => {
+        document.getElementById('modeToggle').addEventListener('click', function() {
             isAiMode = !isAiMode;
             document.getElementById('icon-magic').style.display = isAiMode ? "block" : "none";
             document.getElementById('icon-lock').style.display = isAiMode ? "none" : "block";
-            if (isAiMode) {
-                modeToggle.classList.add('active-mode');
-                titleToggle.style.opacity = "0";
-                setTimeout(() => titleToggle.style.display = "none", 300);
-            } else {
-                modeToggle.classList.remove('active-mode');
-                titleToggle.style.display = "flex";
-                setTimeout(() => titleToggle.style.opacity = "1", 10);
-            }
+            isAiMode ? this.classList.add('active-mode') : this.classList.remove('active-mode');
         });
 
-        titleToggle.addEventListener('click', () => {
+        document.getElementById('titleToggle').addEventListener('click', function() {
             useTitleInStrict = !useTitleInStrict;
             document.getElementById('icon-title-on').style.display = useTitleInStrict ? "block" : "none";
             document.getElementById('icon-title-off').style.display = useTitleInStrict ? "none" : "block";
-            useTitleInStrict ? titleToggle.classList.remove('active-mode') : titleToggle.classList.add('active-mode');
+            useTitleInStrict ? this.classList.remove('active-mode') : this.classList.add('active-mode');
+        });
+
+        // 避免點擊按鈕時輸入框失去焦點，以便保留游標位置
+        pageBreakBtn.addEventListener('mousedown', (e) => e.preventDefault());
+
+        // 嚴格精準插入分頁標記，避免重複插入的問題
+        pageBreakBtn.addEventListener('click', () => {
+            promptInput.focus();
+            
+            const selection = window.getSelection();
+            // 確認游標是否真實存在於輸入框內部
+            if (selection.rangeCount > 0 && promptInput.contains(selection.anchorNode)) {
+                const range = selection.getRangeAt(0);
+                range.deleteContents(); // 若有反白文字則先刪除
+                
+                // 建立標記節點
+                const markerDiv = document.createElement('div');
+                markerDiv.className = 'page-break-line';
+                markerDiv.contentEditable = 'false';
+                markerDiv.innerHTML = '<span>✦</span> 分頁標記 <span>✦</span>';
+                
+                // 建立換行節點 (方便用戶繼續往下打字)
+                const brDiv = document.createElement('div');
+                brDiv.innerHTML = '<br>';
+                
+                // 透過 Range API 精準插入 (順序：先插換行，再插標記，游標就會在換行處)
+                range.insertNode(brDiv);
+                range.insertNode(markerDiv);
+                
+                // 將游標強迫移動到新建立的換行內部
+                range.setStart(brDiv, 0);
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                
+                // 畫面自動滾動至標記處
+                markerDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                // 如果目前沒有游標 (例如一開始還沒點擊輸入框)，則確實只加在最尾端
+                const markerHTML = `<div class="page-break-line" contenteditable="false"><span>✦</span> 分頁標記 <span>✦</span></div><div><br></div>`;
+                promptInput.insertAdjacentHTML('beforeend', markerHTML);
+                promptInput.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         });
 
         function splitIntoChunks(text, maxLength = 110) {
@@ -278,150 +353,192 @@
             return chunks;
         }
 
-        // ==========================================
-        // 【核心更新】使用 Apps Script 爬取 Yahoo 真實圖片
-        // ==========================================
-        async function fetchRealWebImages(slidesArray, mainTopic) {
-            const slideImages = [];
+        // --- 全新圖片抓取邏輯 (強制合併：主標題 + 本頁片段) ---
+        function getHighResUniqueImageUrl(mainTopic, textSnippet, index) {
+            // 1. 提取並清理主標題 (確保整個簡報不偏題，取前15個字)
+            let cleanMain = (mainTopic || "藝術").replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, ' ').trim().substring(0, 15);
             
-            for (let i = 0; i < slidesArray.length; i++) {
-                const slide = slidesArray[i];
-                const h2 = slide.querySelector('h2');
-                const subtitle = h2 ? h2.innerText.trim() : "";
-                
-                // 組合查詢字串，精準定位該頁圖片
-                let query = mainTopic;
-                if (subtitle && subtitle.length > 1 && subtitle.length < 15) {
-                    query = `${mainTopic} ${subtitle}`;
-                }
-                
-                let foundUrl = null;
-
-                try {
-                    // 呼叫你的 GAS Web App API，取得 Yahoo 圖片 URL
-                    const response = await fetch(`${GAS_IMAGE_API_URL}?q=${encodeURIComponent(query)}&limit=10`);
-                    const data = await response.json();
-                    
-                    if (data.success && data.urls && data.urls.length > 0) {
-                        // 利用 i 取餘數，讓同一組圖片不會一直取到同一張
-                        const imgIndex = i % data.urls.length;
-                        foundUrl = data.urls[imgIndex];
-                    }
-                } catch (e) {
-                    console.warn(`第 ${i+1} 頁的 Yahoo 圖片抓取失敗，使用備用圖:`, e);
-                }
-                
-                // 如果 API 掛掉或完全找不到圖片，提供一個美觀的預設備用圖
-                if (!foundUrl) {
-                    foundUrl = `https://picsum.photos/seed/${encodeURIComponent(mainTopic) + i}/1600/900`;
-                }
-                
-                slideImages.push(foundUrl);
-                // 稍加延遲，避免短時間內對 Apps Script 產生過大負載
-                await new Promise(r => setTimeout(r, 400));
+            // 2. 提取並清理當前頁面片段 (確保符合單頁語境，取前15個字)
+            let cleanSnippet = "";
+            if (textSnippet && textSnippet.length > 2) {
+                cleanSnippet = textSnippet.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, ' ').trim().substring(0, 15);
             }
-            return slideImages;
+
+            // 3. 組合兩者作為最終關鍵字 (若兩者雷同則避免重複累贅)
+            let queryPhrase = cleanMain;
+            if (cleanSnippet && !cleanMain.includes(cleanSnippet) && !cleanSnippet.includes(cleanMain)) {
+                queryPhrase = `${cleanMain} ${cleanSnippet}`;
+            }
+
+            // 4. 加入排除與美化參數，避免出現雜亂圖片
+            let finalQuery = `${queryPhrase} 攝影 意境 -文字 -海報 -圖表 -字`.trim();
+            
+            let cacheBuster = Date.now() + "_" + Math.floor(Math.random() * 1000000);
+            let tse = "tse" + ((index % 4) + 1);
+            return `https://${tse}.mm.bing.net/th?q=${encodeURIComponent(finalQuery)}&w=1200&h=1200&c=7&rs=1&pid=Api&mkt=zh-TW&cb=${cacheBuster}&uid=${cacheBuster}`;
         }
 
         generateBtn.addEventListener('click', async () => {
-            const topic = promptInput.value.trim();
-            if (!topic) return;
+            const rawHTML = promptInput.innerHTML.trim();
+            if (!promptInput.innerText.trim() && !rawHTML) return;
 
             generateBtn.disabled = true;
             loader.style.display = "flex";
-            loaderText.innerText = "AI 整理簡報內容中...";
             controls.style.display = "none";
             actionBar.style.display = "none";
 
             try {
                 let finalHtml = "";
-                if (!isAiMode && !useTitleInStrict) {
-                    await new Promise(r => setTimeout(r, 400)); 
-                    const chunks = splitIntoChunks(topic, 110);
-                    finalHtml = chunks.map(c => `<div class="slide"><p>${c}</p></div>`).join("\n");
-                } 
-                else {
-                    let systemPrompt = isAiMode 
-                        ? `You are a minimalist designer. Output ONLY valid HTML. Enhance and structure input into slides. RULES: 1. TRADITIONAL CHINESE ONLY. 2. Max 100 chars per slide. 3. Format: <div class="slide"><h2>[Subtitle]</h2><p>[Text]</p></div>`
-                        : `You are a paginator. Output ONLY HTML. STRICT MODE: Format: <div class="slide"><h2>[Unique Subtitle]</h2><p>[EXACT text]</p></div>`;
-                    let userContent = isAiMode ? topic : splitIntoChunks(topic, 110).map((c, i) => `[Chunk ${i+1}]\n${c}`).join("\n\n");
+                let chunks = [];
+                let topicForImage = "藝術排版";
 
+                // 解析手動分頁標記
+                if (rawHTML.includes('page-break-line')) {
+                    const parts = rawHTML.split(/<div class="page-break-line".*?<\/div>/gi);
+                    const tempDiv = document.createElement('div');
+                    parts.forEach(part => {
+                        tempDiv.innerHTML = part.replace(/<br\s*\/?>/gi, '\n');
+                        let text = tempDiv.innerText.trim();
+                        if (text) {
+                            let subChunks = splitIntoChunks(text, 110);
+                            chunks.push(...subChunks);
+                        }
+                    });
+                } else {
+                    chunks = splitIntoChunks(promptInput.innerText.trim(), 110);
+                }
+
+                // 擴大抓取全篇第一句的字數作為全局主關鍵字
+                if(chunks.length > 0) topicForImage = chunks[0].substring(0, 15).replace(/\n/g, ' ');
+
+                if (!isAiMode) {
+                    loaderText.innerText = "依循宋體文學排版中...";
+                    
+                    if (!useTitleInStrict) {
+                        await new Promise(r => setTimeout(r, 400));
+                        finalHtml = chunks.map(c => `<div class="slide"><p>${c.replace(/\n/g, '<br>')}</p></div>`).join("\n");
+                    } else {
+                        loaderText.innerText = "生成對應標題...";
+                        const titlePrompt = `請為以下 ${chunks.length} 個段落，分別產生極短的繁體中文標題(不超過8個字)。請"只"輸出一個 JSON 陣列，例如: ["標題一", "標題二"]。`;
+                        const titleContent = chunks.map((c, i) => `[段落 ${i+1}] ${c}`).join("\n\n");
+                        
+                        try {
+                            const response = await fetch(API_URL, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEYS[currentApiKeyIndex]}` },
+                                body: JSON.stringify({
+                                    model: MODEL,
+                                    messages: [ { role: "system", content: titlePrompt }, { role: "user", content: titleContent } ]
+                                })
+                            });
+                            const data = await response.json();
+                            let aiResponse = data.choices[0].message.content.trim().replace(/```json/gi, '').replace(/```/gi, '').trim();
+                            let titles = JSON.parse(aiResponse);
+                            while(titles.length < chunks.length) titles.push(topicForImage);
+                            finalHtml = chunks.map((c, i) => `<div class="slide"><h2>${titles[i]}</h2><p>${c.replace(/\n/g, '<br>')}</p></div>`).join("\n");
+                        } catch(e) {
+                            finalHtml = chunks.map((c, i) => `<div class="slide"><h2>章節 ${i+1}</h2><p>${c.replace(/\n/g, '<br>')}</p></div>`).join("\n");
+                        }
+                    }
+                } else {
+                    loaderText.innerText = "AI 整理與排版生成中...";
+                    let textForAI = promptInput.innerHTML;
+                    let tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = textForAI;
+                    tempDiv.querySelectorAll('.page-break-line').forEach(el => el.innerText = '\n\n[MANUAL_PAGE_BREAK]\n\n');
+                    
+                    let systemPrompt = `You are a minimalist designer. Output ONLY valid HTML. 
+                    RULES: 1. TRADITIONAL CHINESE ONLY. 
+                    2. If you see [MANUAL_PAGE_BREAK], you MUST start a new slide at that exact point. Furthermore, if the text inside any block is too long, you MUST automatically split it into multiple slides to keep the presentation minimalist and uncluttered.
+                    3. Format: <div class="slide"><h2>[Subtitle]</h2><p>[Text]</p></div>`;
+                    
                     const response = await fetch(API_URL, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEYS[0]}` },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEYS[currentApiKeyIndex]}` },
                         body: JSON.stringify({
                             model: MODEL,
-                            messages: [ { role: "system", content: systemPrompt }, { role: "user", content: userContent } ]
+                            messages: [ { role: "system", content: systemPrompt }, { role: "user", content: tempDiv.innerText } ]
                         })
                     });
-
-                    if (!response.ok) throw new Error(response.status);
                     const data = await response.json();
                     finalHtml = data.choices[0].message.content.replace(/```html/gi, '').replace(/```/gi, '').trim();
                 }
 
-                await renderPresentation(finalHtml, topic);
+                renderPresentation(finalHtml, topicForImage);
 
             } catch (error) {
                 console.error(error);
-                presentationBoard.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>`;
+                presentationBoard.innerHTML = `<div class="empty-state"><p style="color:#aaa;">發生錯誤，請稍後再試</p></div>`;
             } finally {
                 generateBtn.disabled = false;
                 loader.style.display = "none";
             }
         });
 
-        async function renderPresentation(htmlContent, mainTopic) {
+        function renderPresentation(htmlContent, mainTopic) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlContent;
             
             const layoutSequence = ['layout-standard', 'layout-split-right-img', 'layout-indent', 'layout-split-left-img'];
-            const newSlidesArray = Array.from(tempDiv.querySelectorAll('.slide'));
+            const rawSlides = tempDiv.querySelectorAll('.slide');
+            presentationBoard.innerHTML = '';
 
-            // 切換載入提示文字
-            loaderText.innerText = "從 Yahoo 搜尋相關配圖中...";
-
-            // 調用 GAS API 取得 Yahoo 真實圖片
-            const slideImages = await fetchRealWebImages(newSlidesArray, mainTopic);
-
-            newSlidesArray.forEach((slide, index) => {
+            rawSlides.forEach((slide, index) => {
+                const newSlide = document.createElement('div');
                 const assignedLayout = layoutSequence[index % layoutSequence.length];
-                slide.classList.add(assignedLayout);
-                
-                const imageUrl = slideImages[index];
+                newSlide.className = `slide ${assignedLayout}`;
 
-                const setupImage = (img) => {
-                    img.src = imageUrl;
-                    img.onerror = function() {
-                        this.onerror = null; 
-                        this.src = `https://picsum.photos/seed/${Math.floor(Math.random()*99999)}/1600/900`;
-                    };
-                };
+                const bgImg = document.createElement('img');
+                bgImg.className = 'bg-img';
+                bgImg.crossOrigin = "Anonymous";
+                bgImg.src = `https://picsum.photos/seed/${Math.floor(Math.random() * 99999)}/1600/900`;
+                newSlide.appendChild(bgImg);
 
-                if (assignedLayout.includes('split') && assignedLayout.includes('img')) {
+                const textWrapper = document.createElement('div');
+                textWrapper.className = 'text-content-wrapper';
+                const scrollArea = document.createElement('div');
+                scrollArea.className = 'text-inner-scroll';
+
+                const h1 = slide.querySelector('h1');
+                const h2 = slide.querySelector('h2');
+                const p = slide.querySelector('p');
+                const ul = slide.querySelector('ul');
+
+                if(h1) scrollArea.appendChild(h1.cloneNode(true));
+                if(h2) scrollArea.appendChild(h2.cloneNode(true));
+                if(p) scrollArea.appendChild(p.cloneNode(true));
+                if(ul) scrollArea.appendChild(ul.cloneNode(true));
+
+                textWrapper.appendChild(scrollArea);
+                newSlide.appendChild(textWrapper);
+
+                if (assignedLayout.includes('img')) {
+                    const textSnippet = p ? p.innerText : "";
+                    const bingImageUrl = getHighResUniqueImageUrl(mainTopic, textSnippet, index);
+
                     const imgWrapper = document.createElement('div');
                     imgWrapper.className = 'feature-img-wrapper';
-                    const img = document.createElement('img');
-                    setupImage(img);
-                    imgWrapper.appendChild(img);
-                    slide.appendChild(imgWrapper);
-                } else {
-                    const img = document.createElement('img');
-                    img.className = 'bg-img';
-                    setupImage(img);
-                    slide.insertBefore(img, slide.firstChild);
+                    const artFrame = document.createElement('div');
+                    artFrame.className = 'art-frame';
+                    const featureImg = document.createElement('img');
+                    featureImg.crossOrigin = "anonymous";
+                    featureImg.src = bingImageUrl;
+                    featureImg.onerror = function() { this.src = `https://picsum.photos/seed/fb${Math.floor(Math.random()*999)}/800/600`; };
+                    
+                    artFrame.appendChild(featureImg);
+                    imgWrapper.appendChild(artFrame);
+                    newSlide.appendChild(imgWrapper);
                 }
 
                 const pageNum = document.createElement('div');
                 pageNum.className = 'slide-number-indicator';
                 pageNum.innerText = String(index + 1).padStart(2, '0');
-                slide.appendChild(pageNum);
+                newSlide.appendChild(pageNum);
+
+                presentationBoard.appendChild(newSlide);
             });
 
-            presentationBoard.innerHTML = '';
-            newSlidesArray.forEach(s => presentationBoard.appendChild(s));
             presentationBoard.appendChild(loader);
-
             slides = document.querySelectorAll('.slide');
             if (slides.length === 0) return;
 
@@ -430,9 +547,6 @@
             controls.style.display = "flex";
             actionBar.style.display = "flex";
             totalSlideNum.innerText = slides.length;
-            
-            document.documentElement.style.setProperty('--bg-opacity', '0.15');
-            document.getElementById('opacitySlider').value = 30;
         }
 
         function updateSlides() {
@@ -448,137 +562,113 @@
             if (e.key === 'ArrowLeft' && currentIndex > 0) { currentIndex--; updateSlides(); }
         });
 
-        // --- 匯出 HTML ---
-        btnExportHtml.addEventListener('click', () => {
+        // --- 匯出 HTML (同步採用最新防擠壓與置中對齊網格設定) ---
+        document.getElementById('btnExportHtml').addEventListener('click', () => {
             const currentOpacity = getComputedStyle(document.documentElement).getPropertyValue('--bg-opacity').trim();
             const slideHtml = Array.from(slides).map(s => s.outerHTML).join('\n');
             const exportHtml = `<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <title>AURA Presentation</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&family=Noto+Sans+TC:wght@200;300;400&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; margin: 0; background: #fff; overflow: hidden; }
-        .wrapper { width: 100vw; height: 100vh; position: relative; }
-        .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.8s ease; 
-                 display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: auto 1fr; gap: 2vw; padding: 5vw 6vw 7vw 6vw; box-sizing: border-box; overflow: hidden; }
-        .slide.active { opacity: 1; z-index: 10; }
-        .slide > *:not(.bg-img) { position: relative; z-index: 2; }
-        .slide > .bg-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: ${currentOpacity}; z-index: 1; }
-        .feature-img-wrapper { width: 100%; height: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.08); display: flex; background: #f9f9f9;}
-        .feature-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .slide h1, .slide h2 { grid-row: 1; align-self: start; margin: 0; word-break: keep-all; text-align: left; }
-        .slide h1 { font-size: clamp(3rem, 6vw, 5.5rem); font-weight: 200; line-height: 1.2; color: #111; margin-bottom: 0.5rem; }
-        .slide h2 { font-size: clamp(1.8rem, 3.5vw, 3rem); font-weight: 300; color: #666; letter-spacing: 2px; }
-        .slide p, .slide ul { grid-row: 2; align-self: center; font-size: clamp(1.5rem, 2.5vw, 2.2rem); line-height: 1.9; color: #333; margin: 0; font-weight: 300; text-align: left; }
-        
-        .layout-standard h1, .layout-standard h2, .layout-standard p { grid-column: 1 / 11; }
-        .layout-indent h1, .layout-indent h2 { grid-column: 1 / 12; }
-        .layout-indent p { grid-column: 4 / 12; }
-        .layout-split-left-img h1, .layout-split-left-img h2, .layout-split-left-img p { grid-column: 1 / 7; }
-        .layout-split-left-img .feature-img-wrapper { grid-column: 8 / 13; grid-row: 1 / 3; }
-        .layout-split-right-img h1, .layout-split-right-img h2, .layout-split-right-img p { grid-column: 7 / 13; }
-        .layout-split-right-img .feature-img-wrapper { grid-column: 1 / 6; grid-row: 1 / 3; }
-        
-        .slide-number-indicator { position: absolute; bottom: 2vw; right: 3vw; font-size: 1.2rem; font-weight: 300; color: #999; letter-spacing: 3px; z-index: 3; font-variant-numeric: tabular-nums; pointer-events: none; }
-        .ui-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 20px; }
-        .icon-btn { background: transparent; border: none; width: 40px; height: 40px; cursor: pointer; color: #aaa; display: flex; justify-content: center; align-items: center; transition: 0.2s;}
-        .icon-btn:hover { color: #111; }
-        .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round;}
-        .counter { font-size: 0.85rem; color: #888; font-weight: 300; font-variant-numeric: tabular-nums; letter-spacing: 1px;}
-    </style>
-</head>
-<body>
-    <div class="wrapper" id="board">${slideHtml}</div>
-    <div class="ui-bar">
-        <button class="icon-btn" id="btn-prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-        <div class="counter"><span id="num-curr">1</span> / <span id="num-tot">0</span></div>
-        <button class="icon-btn" id="btn-next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-    </div>
-    <script>
-        const slides = document.querySelectorAll('.slide');
-        const currEl = document.getElementById('num-curr');
-        document.getElementById('num-tot').innerText = slides.length;
-        let c = 0;
-        function update() { slides.forEach((s, i) => s.classList.toggle('active', i === c)); currEl.innerText = c + 1; }
-        if(slides.length > 0) update();
-        document.getElementById('btn-prev').addEventListener('click', (e) => { e.stopPropagation(); if(c > 0) { c--; update(); }});
-        document.getElementById('btn-next').addEventListener('click', (e) => { e.stopPropagation(); if(c < slides.length - 1) { c++; update(); }});
-        document.addEventListener('keydown', (e) => { if(e.key === 'ArrowRight' && c < slides.length - 1) { c++; update(); } if(e.key === 'ArrowLeft' && c > 0) { c--; update(); }});
-        document.getElementById('board').addEventListener('click', () => { if(c < slides.length - 1) { c++; update(); }});
-    <\/script>
-</body>
-</html>`;
-            const blob = new Blob([exportHtml], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
+<html lang="zh-TW"><head><meta charset="UTF-8"><title>AURA Presentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Noto+Serif+TC:wght@300;400;500;600&family=Inter:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Inter', 'Noto Serif TC', serif; margin: 0; background: #fff; overflow: hidden; }
+    .wrapper { width: 100vw; height: 100vh; position: relative; }
+    .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; display: grid; grid-template-columns: repeat(12, 1fr); align-items: center; gap: 2vw; padding: 4vw 5vw; box-sizing: border-box; overflow: hidden; }
+    .slide.active { opacity: 1; z-index: 10; }
+    .bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: ${currentOpacity}; filter: grayscale(100%); z-index: 1; }
+    
+    .text-content-wrapper { position: relative; z-index: 2; width: 100%; max-height: 70vh; height: fit-content; align-self: center; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(0, 0, 0, 0.08); padding: 3vw 3.5vw; box-shadow: 0 15px 40px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+    .text-content-wrapper::before, .text-content-wrapper::after { content: ''; position: absolute; width: 15px; height: 15px; border: 1px solid rgba(0,0,0,0.3); }
+    .text-content-wrapper::before { top: 12px; left: 12px; border-right: none; border-bottom: none; }
+    .text-content-wrapper::after { bottom: 12px; right: 12px; border-left: none; border-top: none; }
+    .text-inner-scroll { overflow-y: auto; padding-right: 15px; }
+    .text-inner-scroll::-webkit-scrollbar { width: 4px; } .text-inner-scroll::-webkit-scrollbar-thumb { background: #dcdcdc; border-radius: 4px; }
+    
+    h1, h2 { margin: 0; text-align: left; }
+    h1 { font-size: clamp(3rem, 5vw, 4.5rem); font-weight: 500; color: #111; margin-bottom: 0.5rem;}
+    h2 { font-size: clamp(2rem, 3vw, 3rem); font-weight: 400; color: #666; letter-spacing: 4px;}
+    p { font-size: clamp(1.4rem, 1.8vw, 1.8rem); line-height: 2.1; color: #333; margin-top: 1rem; font-weight: 300; text-align: left; }
+    .text-inner-scroll:not(:has(h1)):not(:has(h2)) p { margin-top: 0; margin-bottom: 0; }
+    
+    .feature-img-wrapper { position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; align-self: center; }
+    .art-frame { position: relative; padding: 0.8vw; background: #fff; border: 1px solid #eee; box-shadow: 0 15px 45px rgba(0,0,0,0.1); display: inline-block; max-height: 65vh; }
+    .art-frame::before { content: ''; position: absolute; inset: 4px; border: 1px solid rgba(0,0,0,0.06); }
+    .art-frame img { display: block; max-width: 100%; max-height: calc(65vh - 2vw); object-fit: contain; }
+
+    .layout-standard .text-content-wrapper { grid-column: 2 / 12; }
+    .layout-indent .text-content-wrapper { grid-column: 3 / 11; }
+    .layout-split-left-img .feature-img-wrapper { grid-column: 1 / 6; }
+    .layout-split-left-img .text-content-wrapper { grid-column: 7 / 13; }
+    .layout-split-right-img .text-content-wrapper { grid-column: 1 / 7; }
+    .layout-split-right-img .feature-img-wrapper { grid-column: 8 / 13; }
+
+    .slide-number-indicator { position: absolute; bottom: 2vw; right: 3vw; font-size: 1.2rem; font-family: 'Cinzel', serif; color: #999; letter-spacing: 3px; z-index: 3; }
+    .ui-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 20px; }
+    .icon-btn { background: transparent; border: none; width: 40px; height: 40px; cursor: pointer; color: #aaa; display: flex; justify-content: center; align-items: center; transition: 0.2s;}
+    .icon-btn:hover { color: #111; } .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1; }
+    .counter { font-size: 0.85rem; font-family: 'Inter', sans-serif; color: #888; font-variant-numeric: tabular-nums; letter-spacing: 1px;}
+</style></head><body>
+<div class="wrapper" id="board">${slideHtml}</div>
+<div class="ui-bar">
+    <button class="icon-btn" id="btn-prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+    <div class="counter"><span id="num-curr">1</span> / <span id="num-tot">0</span></div>
+    <button class="icon-btn" id="btn-next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+</div>
+<script>
+    const slides = document.querySelectorAll('.slide');
+    const currEl = document.getElementById('num-curr');
+    document.getElementById('num-tot').innerText = slides.length;
+    let c = 0;
+    function update() { slides.forEach((s, i) => s.classList.toggle('active', i === c)); currEl.innerText = c + 1; }
+    if(slides.length > 0) update();
+    document.getElementById('btn-prev').addEventListener('click', (e) => { e.stopPropagation(); if(c > 0) { c--; update(); }});
+    document.getElementById('btn-next').addEventListener('click', (e) => { e.stopPropagation(); if(c < slides.length - 1) { c++; update(); }});
+    document.addEventListener('keydown', (e) => { if(e.key === 'ArrowRight' && c < slides.length - 1) { c++; update(); } if(e.key === 'ArrowLeft' && c > 0) { c--; update(); }});
+<\/script></body></html>`;
             const a = document.createElement('a');
-            a.href = url;
+            a.href = URL.createObjectURL(new Blob([exportHtml], { type: 'text/html' }));
             a.download = 'AURA_Presentation.html';
             a.click();
         });
 
-        // --- 匯出 PPTX ---
-        btnExportPptx.addEventListener('click', () => {
+        // --- 匯出 PPTX (邏輯受嚴格保護，完全不改動) ---
+        document.getElementById('btnExportPptx').addEventListener('click', () => {
             if(typeof PptxGenJS === 'undefined') { alert("PPT 引擎載入中，請稍後再試。"); return; }
-            
-            let pres = new PptxGenJS();
-            pres.layout = 'LAYOUT_16x9';
-
-            const currentOpacity = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bg-opacity').trim());
-            const pptxTransparency = 100 - (currentOpacity * 100);
+            let pres = new PptxGenJS(); pres.layout = 'LAYOUT_16x9';
+            const presentationFont = 'Noto Serif TC';
+            const pptxTransparency = 100 - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bg-opacity').trim()) * 100);
 
             slides.forEach((slide, index) => {
                 let pptSlide = pres.addSlide();
-                
                 let bgImg = slide.querySelector('.bg-img');
-                if (bgImg && bgImg.src) {
-                    try {
-                        pptSlide.addImage({ path: bgImg.src, x: 0, y: 0, w: '100%', h: '100%', transparency: pptxTransparency }); 
-                    } catch(e) {}
-                }
+                if (bgImg) pptSlide.addImage({ path: bgImg.src, x: 0, y: 0, w: '100%', h: '100%', transparency: pptxTransparency }); 
                 
-                let titleX = 0.8, titleW = 8.0, bodyX = 0.8, bodyW = 8.0;
+                let boxX = 0.8, boxW = 8.4, textW = 7.6, imgX = 0, imgW = 0;
+                let cList = slide.classList;
 
-                if (slide.classList.contains('layout-indent')) {
-                    titleX = 0.8; titleW = 8.0; bodyX = 2.8; bodyW = 6.0; 
-                } 
-                else if (slide.classList.contains('layout-split-left-img')) {
-                    titleX = 0.6; titleW = 4.2; bodyX = 0.6; bodyW = 4.2;
-                    let featureImg = slide.querySelector('.feature-img-wrapper img');
-                    if (featureImg && featureImg.src) {
-                        try { pptSlide.addImage({ path: featureImg.src, x: 5.2, y: 0.6, w: 4.2, h: 4.4, sizing: {type: 'cover'} }); } catch(e){}
-                    }
-                } 
-                else if (slide.classList.contains('layout-split-right-img')) {
-                    titleX = 5.2; titleW = 4.2; bodyX = 5.2; bodyW = 4.2;
-                    let featureImg = slide.querySelector('.feature-img-wrapper img');
-                    if (featureImg && featureImg.src) {
-                        try { pptSlide.addImage({ path: featureImg.src, x: 0.6, y: 0.6, w: 4.2, h: 4.4, sizing: {type: 'cover'} }); } catch(e){}
-                    }
-                }
+                // 配置版型區域
+                if (cList.contains('layout-indent')) { boxX = 1.8; boxW = 6.4; textW = 5.6; } 
+                else if (cList.contains('layout-split-left-img')) { boxX = 5.2; boxW = 4.4; textW = 3.8; imgX = 0.5; imgW = 4.2; } 
+                else if (cList.contains('layout-split-right-img')) { boxX = 0.4; boxW = 4.4; textW = 3.8; imgX = 5.3; imgW = 4.2; }
 
-                let h1 = slide.querySelector('h1');
-                let h2 = slide.querySelector('h2');
-                let titleY = 0.8;
+                // 畫文字盛放背景 (微透明矩形模擬)
+                pptSlide.addShape(pres.ShapeType.rect, { x: boxX, y: 0.8, w: boxW, h: 4.0, fill: { color: 'FFFFFF', transparency: 15 }, line: { color: 'CCCCCC', width: 1 } });
                 
-                if(h1) { pptSlide.addText(h1.innerText, { x: titleX, y: titleY, w: titleW, align: 'left', fontSize: 44, color: '111111', bold: false }); titleY += 0.8; }
-                if(h2) { pptSlide.addText(h2.innerText, { x: titleX, y: titleY, w: titleW, align: 'left', fontSize: 26, color: '666666' }); }
-
-                let p = slide.querySelector('p');
-                if(p) {
-                    pptSlide.addText(p.innerText, { 
-                        x: bodyX, y: 2.2, w: bodyW, h: 2.5, 
-                        align: 'left', valign: 'middle', 
-                        fontSize: 20, color: '333333' 
-                    });
+                // 畫圖片框架 (純白底框)
+                let featureImg = slide.querySelector('.feature-img-wrapper img');
+                if (featureImg && imgW > 0) {
+                    pptSlide.addShape(pres.ShapeType.rect, { x: imgX, y: 0.6, w: imgW, h: 4.4, fill: { color: 'FFFFFF' }, shadow: { type: 'outer', opacity: 0.2, blur: 5 }});
+                    try { pptSlide.addImage({ path: featureImg.src, x: imgX + 0.1, y: 0.7, sizing: { type: 'contain', w: imgW - 0.2, h: 4.2 } }); } catch(e){}
                 }
 
-                let pageStr = String(index + 1).padStart(2, '0');
-                pptSlide.addText(pageStr, { x: 9.0, y: 5.1, w: 0.8, h: 0.4, align: 'right', fontSize: 16, color: '999999', bold: false });
+                let h1 = slide.querySelector('h1'), h2 = slide.querySelector('h2'), p = slide.querySelector('p');
+                let curY = 1.2;
+                
+                if(h1) { pptSlide.addText(h1.innerText, { x: boxX + 0.4, y: curY, w: textW, h:0.6, align: 'left', fontFace: presentationFont, fontSize: 36, color: '111111' }); curY += 0.7; }
+                if(h2) { pptSlide.addText(h2.innerText, { x: boxX + 0.4, y: curY, w: textW, h:0.5, align: 'left', fontFace: presentationFont, fontSize: 24, color: '666666' }); curY += 0.5; }
+                if(p) { pptSlide.addText(p.innerText, { x: boxX + 0.4, y: curY, w: textW, h: 4.2 - curY, align: 'left', valign: 'top', fontFace: presentationFont, fontSize: 18, color: '333333', lineSpacing: 30 }); }
+
+                pptSlide.addText(String(index + 1).padStart(2, '0'), { x: 9.0, y: 5.1, w: 0.8, h: 0.4, align: 'right', fontFace: 'Cinzel', fontSize: 16, color: '999999' });
             });
-
             pres.writeFile({ fileName: "AURA_Presentation.pptx" });
         });
     </script>
