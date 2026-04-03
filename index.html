@@ -307,7 +307,14 @@
         let globalMainKeyword = "藝術排版";
         let usedQueries = new Set(); 
         
-        const stopWords = new Set(["的","了","和","是","就","都","而","及","與","著","或","一個","沒有","我們","你們","他們","這個","那個","因為","所以","雖然","但是","如果","那麼","可以","就是","這","那","哪","啊","呢","嗎","吧","也","很","在","從","到","讓","被","對","會","能","要","去","有","把","給"]);
+        // 擴展停用詞庫：加入更多中英文無意義詞彙
+        const stopWords = new Set([
+            "的","了","和","是","就","都","而","及","與","著","或","一個","沒有","我們","你們","他們",
+            "這個","那個","因為","所以","雖然","但是","如果","那麼","可以","就是","這","那","哪","啊","呢",
+            "嗎","吧","也","很","在","從","到","讓","被","對","會","能","要","去","有","把","給",
+            "什麼","怎麼","自己","開始","需要","進行","產生","使用","這種","那些","以及","為了","這樣",
+            "the","and","that","this","with","for","not","are","but","from","you","your","what","how"
+        ]);
 
         opacitySlider.addEventListener('input', (e) => document.documentElement.style.setProperty('--bg-opacity', (0.02 + (e.target.value / 100) * 0.23).toFixed(3)));
         document.getElementById('modeToggle').addEventListener('click', function() { isAiMode = !isAiMode; document.getElementById('icon-magic').style.display = isAiMode ? "block" : "none"; document.getElementById('icon-lock').style.display = isAiMode ? "none" : "block"; isAiMode ? this.classList.add('active-mode') : this.classList.remove('active-mode'); });
@@ -331,14 +338,76 @@
             if (cur) chunks.push(cur); return chunks;
         }
 
-        // 提取內文關鍵詞
-        function extractKeywords(text, maxWords = 2) {
+        // --- 升級版：提取單一最代表性子關鍵詞 (詞頻統計 + 支援中國數字 + 剔除年月日) ---
+        function extractKeywords(text) {
             if (!text) return "";
-            if (typeof Intl.Segmenter !== 'function') return text.replace(/[^\u4e00-\u9fa5]/g, '').substring(0, 4);
-            const segmenter = new Intl.Segmenter('zh-TW', { granularity: 'word' });
-            const segments = [...segmenter.segment(text)];
-            const words = segments.filter(s => s.isWordLike).map(s => s.segment).filter(w => w.length >= 2 && !stopWords.has(w));
-            return [...new Set(words)].slice(0, maxWords).join(" ");
+            
+            // 移除一般阿拉伯數字 (保留要求中說的：不要數字，但允許中國數字)
+            let cleanText = text.replace(/[0-9０-９]/g, '');
+            
+            // 判斷是否為年月日組合 (僅由中文數字與年月日號組成，且必須包含至少一個「年月日號」)
+            const isDatePattern = (str) => /^[一二三四五六七八九十百千萬億兆零〇年月日號]+$/.test(str) && /[年月日號]/.test(str);
+
+            let words = [];
+
+            if (typeof Intl.Segmenter === 'function') {
+                // 同時支援中英文分詞
+                const segmenter = new Intl.Segmenter(['zh-TW', 'en'], { granularity: 'word' });
+                const segments = [...segmenter.segment(cleanText)];
+                
+                words = segments
+                    .filter(s => s.isWordLike)
+                    .map(s => s.segment.trim())
+                    .filter(w => {
+                        let isEnglish = /^[a-zA-Z]+$/.test(w);
+                        let isStopWord = stopWords.has(w.toLowerCase());
+                        let isDate = isDatePattern(w);
+                        // 過濾：非停用詞、非日期組合，且（英文大於等於2字母 或 中文大於等於2字）
+                        return !isStopWord && !isDate && ((isEnglish && w.length >= 2) || (!isEnglish && w.length >= 2));
+                    });
+            } else {
+                // 無支援 Segmenter 的備用方案
+                let enWords = cleanText.match(/[a-zA-Z]{2,}/g) || [];
+                let chText = cleanText.replace(/[^\u4e00-\u9fa5]/g, '');
+                let chWords = [];
+                for (let i = 0; i < chText.length - 1; i++) {
+                    chWords.push(chText.substring(i, i + 2));
+                }
+                words = [...enWords, ...chWords].filter(w => {
+                    return !stopWords.has(w.toLowerCase()) && !isDatePattern(w);
+                });
+            }
+
+            if (words.length === 0) {
+                // 如果嚴格過濾後完全沒字，回退取第一段可用的文字段落（最多4個字）
+                let backupMatch = cleanText.match(/[\u4e00-\u9fa5a-zA-Z]+/g);
+                if(backupMatch && backupMatch.length > 0) return backupMatch[0].substring(0, 4);
+                return "";
+            }
+
+            // --- 透過詞頻統計(TF)選出最重要的一個詞 ---
+            const frequency = {};
+            words.forEach(w => {
+                let key = w.toLowerCase();
+                frequency[key] = (frequency[key] || 0) + 1;
+            });
+
+            let maxFreq = 0;
+            let bestWord = "";
+
+            for (let w in frequency) {
+                // 優先選擇詞頻最高的；若詞頻相同，選擇字數較長者（通常較具體、更具代表性）
+                if (frequency[w] > maxFreq) {
+                    maxFreq = frequency[w];
+                    bestWord = w;
+                } else if (frequency[w] === maxFreq && w.length > bestWord.length) {
+                    bestWord = w;
+                }
+            }
+
+            // 找回原始字串中的大小寫形式並回傳（唯一一個代表詞）
+            const finalWord = words.find(w => w.toLowerCase() === bestWord) || bestWord;
+            return finalWord;
         }
 
         // 僅依賴主關鍵詞及子關鍵詞進行搜索
@@ -429,7 +498,8 @@
                 if (userMainInput) {
                     globalMainKeyword = userMainInput;
                 } else if(chunks.length > 0) {
-                    let extracted = extractKeywords(chunks[0], 2);
+                    // 已修改為新版 API，不傳入數量參數
+                    let extracted = extractKeywords(chunks[0]);
                     globalMainKeyword = extracted ? extracted : "視覺藝術";
                 }
 
@@ -494,7 +564,8 @@
                     const featureImg = document.createElement('img'); featureImg.crossOrigin = "anonymous";
                     
                     let subKeyword = "";
-                    if(p && p.innerText) subKeyword = extractKeywords(p.innerText, 2);
+                    // 取唯一代表性子關鍵詞
+                    if(p && p.innerText) subKeyword = extractKeywords(p.innerText);
                     
                     // 帶入主/子關鍵詞與索引進行取圖
                     featureImg.src = getImageUrl(globalMainKeyword, subKeyword, index);
