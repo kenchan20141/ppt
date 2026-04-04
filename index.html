@@ -224,6 +224,23 @@
         @keyframes slowSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulseText { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
+        /* --- 匯出進度極簡 UI --- */
+        .export-loader-overlay {
+            position: fixed; inset: 0; z-index: 100000;
+            background: var(--ui-bg); backdrop-filter: blur(10px);
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.5s ease, visibility 0.5s;
+        }
+        .export-loader-overlay.active { opacity: 1; visibility: visible; }
+        .minimal-progress-track {
+            width: 25vw; min-width: 150px; max-width: 300px; height: 1px;
+            background: var(--ui-border); position: relative; overflow: hidden;
+        }
+        .minimal-progress-fill {
+            position: absolute; top: 0; left: 0; height: 100%; width: 0%;
+            background: var(--ui-text); transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
         /* UI UX 確認 Modal */
         .custom-modal-overlay { position: fixed; inset: 0; z-index: 10000; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s ease; }
         .custom-modal-overlay.active { opacity: 1; visibility: visible; }
@@ -269,6 +286,13 @@
                 <button class="custom-modal-btn custom-modal-btn-cancel" id="btnCancelBack">取消</button>
                 <button class="custom-modal-btn custom-modal-btn-confirm" id="btnConfirmBack">確定</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 匯出 PPTX 極簡載入畫面 (全畫面無文字) -->
+    <div class="export-loader-overlay" id="exportLoader">
+        <div class="minimal-progress-track">
+            <div class="minimal-progress-fill" id="exportProgressFill"></div>
         </div>
     </div>
 
@@ -472,8 +496,6 @@
             return Object.keys(frequency).sort((a, b) => frequency[b] - frequency[a]).slice(0, count).map(lw => words.find(w => w.toLowerCase() === lw)).filter(Boolean);
         }
 
-        // --- 修正圖片畫質問題 ---
-        // 重新加入 c=7 與 rs=1 強制裁切，並提高解析度至 1600 加上 qlt=100 (無損高畫質)
         function getImageUrl(mainKw, subKw, index) {
             let baseQuery = mainKw || "設計"; if (subKw && !baseQuery.includes(subKw)) baseQuery = `${baseQuery} ${subKw}`;
             return `https://tse${(index % 4) + 1}.mm.bing.net/th?q=${encodeURIComponent(baseQuery.trim())}&w=1600&h=1600&c=7&rs=1&qlt=100&pid=Api&mkt=zh-TW&nocache=${Date.now() + index}`;
@@ -659,7 +681,6 @@
             const styles = Array.from(document.querySelectorAll('style')).map(s => s.innerHTML).join('\n');
             const wrapperThemeAttr = currentThemeId === 'mix' ? '' : `data-theme="${currentThemeId}"`;
 
-            // --- 移除底部毛玻璃選單，改為左右點擊翻頁 ---
             const exportHtml = `<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -706,7 +727,7 @@
             if(e.key === 'ArrowLeft' && c > 0) { c--; update(); }
         }); 
 
-        // 點擊畫面左右側翻頁 (並防止複製文字時觸發)
+        // 點擊畫面左右側翻頁
         document.addEventListener('click', (e) => {
             if (window.getSelection().toString().length > 0) return; 
             if (e.clientX < window.innerWidth / 2) {
@@ -748,122 +769,143 @@
             return runs.length > 0 ? runs : [{ text: htmlElement.innerText, options: { color: defaultColor, fontFace: font } }];
         }
 
-        // --- 匯出 PPTX ---
-        document.getElementById('btnExportPptx').addEventListener('click', () => {
+        // --- 匯出 PPTX 加上極簡進度回饋 ---
+        document.getElementById('btnExportPptx').addEventListener('click', async () => {
             if(typeof PptxGenJS === 'undefined') { alert("PPT 引擎載入中，請稍後再試。"); return; }
-            let pres = new PptxGenJS(); pres.layout = 'LAYOUT_16x9';
-            const font = 'Noto Serif TC';
-            const pptxTransparency = 100 - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bg-opacity').trim()) * 100);
+            
+            // 呼叫全螢幕極簡進度條
+            const exportLoader = document.getElementById('exportLoader');
+            const progressFill = document.getElementById('exportProgressFill');
+            exportLoader.classList.add('active');
+            progressFill.style.width = '0%';
 
-            slides.forEach((slide, index) => {
-                let pptSlide = pres.addSlide();
-                
-                let slideThemeId = slide.getAttribute('data-theme') || currentThemeId;
-                if (slideThemeId === 'mix') slideThemeId = 'classic';
-                const cTheme = themePptxColors[slideThemeId];
+            // 模擬順滑的預備進度 (由於JS主執行緒在執行匯出打包時會阻塞)
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += (85 - progress) * 0.08; 
+                progressFill.style.width = `${progress}%`;
+            }, 150);
 
-                pptSlide.bkgd = cTheme.bg; 
-                pptSlide.transition = { type: 'fade', speed: 'med' };
+            // 放棄執行緒短暫時間，讓 DOM 得以渲染出 Loader 畫面
+            await new Promise(r => setTimeout(r, 400));
 
-                let bgImg = slide.querySelector('.bg-img');
-                if (bgImg) pptSlide.addImage({ path: bgImg.src, x: 0, y: 0, w: '100%', h: '100%', transparency: pptxTransparency }); 
-                
-                let cList = slide.classList;
-                let boxX=0, boxY=0, boxW=0, boxH=0, imgX=0, imgY=0, imgW=0, imgH=0, hasImg = !cList.contains('layout-center');
-                
-                // 預設佈局尺寸設定
-                if (cList.contains('layout-img-left')) { imgX=0.5; imgY=0.6; imgW=3.5; imgH=4.4; boxX=4.5; boxY=1.0; boxW=5.0; boxH=3.6; } 
-                else if (cList.contains('layout-img-right')) { boxX=0.5; boxY=1.0; boxW=5.0; boxH=3.6; imgX=6.0; imgY=0.6; imgW=3.5; imgH=4.4; } 
-                else if (cList.contains('layout-overlap-left')) { imgX=2.8; imgY=0.3; imgW=6.9; imgH=5.0; boxX=0.5; boxY=1.5; boxW=4.5; boxH=2.6; } 
-                else if (cList.contains('layout-overlap-right')) { imgX=0.3; imgY=0.3; imgW=6.9; imgH=5.0; boxX=5.0; boxY=2.0; boxW=4.5; boxH=2.6; } 
-                else if (cList.contains('layout-bottom-text')) { imgX=2.0; imgY=0.3; imgW=6.0; imgH=3.2; boxX=1.0; boxY=3.8; boxW=8.0; boxH=1.5; } 
-                else if (cList.contains('layout-center')) { boxX=2.0; boxY=1.5; boxW=6.0; boxH=2.6; } 
+            try {
+                let pres = new PptxGenJS(); pres.layout = 'LAYOUT_16x9';
+                const font = 'Noto Serif TC';
+                const pptxTransparency = 100 - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bg-opacity').trim()) * 100);
 
-                let h1 = slide.querySelector('h1'), h2 = slide.querySelector('h2'), p = slide.querySelector('p');
-
-                // --- 動態高度計算演算法 (解決文字過多溢出與過少留白) ---
-                let totalReqH = 0.7; // 預留上下 padding (約0.7英吋)
-                if (h1) totalReqH += 0.65;
-                if (h2) totalReqH += 0.45;
-                
-                if (p) {
-                    let pText = p.innerText || "";
-                    let charsPerLine = Math.floor((boxW - 0.7) / 0.24); 
-                    if (charsPerLine < 10) charsPerLine = 10;
+                slides.forEach((slide, index) => {
+                    let pptSlide = pres.addSlide();
                     
-                    let explicitLines = (pText.match(/\n/g) || []).length;
-                    let estimatedLines = Math.ceil(pText.length / charsPerLine) + explicitLines;
-                    let requiredPHeight = estimatedLines * 0.35; 
-                    
-                    totalReqH += requiredPHeight;
-                }
+                    let slideThemeId = slide.getAttribute('data-theme') || currentThemeId;
+                    if (slideThemeId === 'mix') slideThemeId = 'classic';
+                    const cTheme = themePptxColors[slideThemeId];
 
-                let defaultBoxH = boxH;
+                    pptSlide.bkgd = cTheme.bg; 
+                    pptSlide.transition = { type: 'fade', speed: 'med' };
 
-                if (totalReqH > defaultBoxH) {
-                    // 文字過長，需要擴大
-                    let heightDiff = totalReqH - defaultBoxH;
-                    boxH = totalReqH;
+                    let bgImg = slide.querySelector('.bg-img');
+                    if (bgImg) pptSlide.addImage({ path: bgImg.src, x: 0, y: 0, w: '100%', h: '100%', transparency: pptxTransparency }); 
                     
-                    if (cList.contains('layout-bottom-text')) {
-                        boxY -= heightDiff; // 底部佈局往上長
-                    } else {
-                        boxY -= (heightDiff / 2); // 其它向中心上下均勻長大
+                    let cList = slide.classList;
+                    let boxX=0, boxY=0, boxW=0, boxH=0, imgX=0, imgY=0, imgW=0, imgH=0, hasImg = !cList.contains('layout-center');
+                    
+                    // 預設佈局尺寸設定
+                    if (cList.contains('layout-img-left')) { imgX=0.5; imgY=0.6; imgW=3.5; imgH=4.4; boxX=4.5; boxY=1.0; boxW=5.0; boxH=3.6; } 
+                    else if (cList.contains('layout-img-right')) { boxX=0.5; boxY=1.0; boxW=5.0; boxH=3.6; imgX=6.0; imgY=0.6; imgW=3.5; imgH=4.4; } 
+                    else if (cList.contains('layout-overlap-left')) { imgX=2.8; imgY=0.3; imgW=6.9; imgH=5.0; boxX=0.5; boxY=1.5; boxW=4.5; boxH=2.6; } 
+                    else if (cList.contains('layout-overlap-right')) { imgX=0.3; imgY=0.3; imgW=6.9; imgH=5.0; boxX=5.0; boxY=2.0; boxW=4.5; boxH=2.6; } 
+                    else if (cList.contains('layout-bottom-text')) { imgX=2.0; imgY=0.3; imgW=6.0; imgH=3.2; boxX=1.0; boxY=3.8; boxW=8.0; boxH=1.5; } 
+                    else if (cList.contains('layout-center')) { boxX=2.0; boxY=1.5; boxW=6.0; boxH=2.6; } 
+
+                    let h1 = slide.querySelector('h1'), h2 = slide.querySelector('h2'), p = slide.querySelector('p');
+
+                    let totalReqH = 0.7;
+                    if (h1) totalReqH += 0.65;
+                    if (h2) totalReqH += 0.45;
+                    
+                    if (p) {
+                        let pText = p.innerText || "";
+                        let charsPerLine = Math.floor((boxW - 0.7) / 0.24); 
+                        if (charsPerLine < 10) charsPerLine = 10;
+                        let explicitLines = (pText.match(/\n/g) || []).length;
+                        let estimatedLines = Math.ceil(pText.length / charsPerLine) + explicitLines;
+                        let requiredPHeight = estimatedLines * 0.35; 
+                        totalReqH += requiredPHeight;
                     }
-                    
-                    if (boxY < 0.2) boxY = 0.2;
-                    if (boxY + boxH > 5.4) { boxH = 5.4 - boxY; }
-                } else if (totalReqH < defaultBoxH) {
-                    // 文字過少，需要收縮以貼合文字
-                    let newBoxH = Math.max(totalReqH, 1.5); // 設定一個最小高度 1.5 英吋防呆，避免縮太小
-                    let heightDiff = defaultBoxH - newBoxH;
-                    boxH = newBoxH;
-                    
-                    if (cList.contains('layout-bottom-text')) {
-                        boxY += heightDiff; // 底部對齊：上方往下壓
-                    } else {
-                        boxY += (heightDiff / 2); // 垂直居中：上下往中間縮
+
+                    let defaultBoxH = boxH;
+
+                    if (totalReqH > defaultBoxH) {
+                        let heightDiff = totalReqH - defaultBoxH;
+                        boxH = totalReqH;
+                        if (cList.contains('layout-bottom-text')) boxY -= heightDiff;
+                        else boxY -= (heightDiff / 2);
+                        if (boxY < 0.2) boxY = 0.2;
+                        if (boxY + boxH > 5.4) boxH = 5.4 - boxY;
+                    } else if (totalReqH < defaultBoxH) {
+                        let newBoxH = Math.max(totalReqH, 1.5); 
+                        let heightDiff = defaultBoxH - newBoxH;
+                        boxH = newBoxH;
+                        if (cList.contains('layout-bottom-text')) boxY += heightDiff;
+                        else boxY += (heightDiff / 2);
                     }
-                }
-                // ---------------------------------------------
 
-                // 畫配圖
-                if (hasImg) {
-                    pptSlide.addShape(pres.ShapeType.rect, { x: imgX, y: imgY, w: imgW, h: imgH, fill: { color: cTheme.shapeFill }, shadow: { type: 'outer', opacity: 0.15, blur: 5 }});
-                    let featureImg = slide.querySelector('.feature-img-wrapper img');
-                    if (featureImg) try { pptSlide.addImage({ path: featureImg.src, x: imgX+0.1, y: imgY+0.1, sizing: { type: 'cover', w: imgW-0.2, h: imgH-0.2 } }); } catch(e){}
-                }
+                    // 畫配圖
+                    if (hasImg) {
+                        pptSlide.addShape(pres.ShapeType.rect, { x: imgX, y: imgY, w: imgW, h: imgH, fill: { color: cTheme.shapeFill }, shadow: { type: 'outer', opacity: 0.15, blur: 5 }});
+                        let featureImg = slide.querySelector('.feature-img-wrapper img');
+                        if (featureImg) try { pptSlide.addImage({ path: featureImg.src, x: imgX+0.1, y: imgY+0.1, sizing: { type: 'cover', w: imgW-0.2, h: imgH-0.2 } }); } catch(e){}
+                    }
 
-                // 畫文字底框與四角裝飾線
-                pptSlide.addShape(pres.ShapeType.rect, { x: boxX, y: boxY, w: boxW, h: boxH, fill: { color: cTheme.shapeFill, transparency: cTheme.shapeOpac }, shadow: { type: 'outer', opacity: 0.08, blur: 10 } });
-                let cLen = 0.2; 
-                pptSlide.addShape(pres.ShapeType.line, { x: boxX+0.15, y: boxY+0.15, w: cLen, h: 0, line: { color: cTheme.line, width: 1.5 } }); // 左上橫
-                pptSlide.addShape(pres.ShapeType.line, { x: boxX+0.15, y: boxY+0.15, w: 0, h: cLen, line: { color: cTheme.line, width: 1.5 } }); // 左上直
-                pptSlide.addShape(pres.ShapeType.line, { x: boxX+boxW-0.15-cLen, y: boxY+boxH-0.15, w: cLen, h: 0, line: { color: cTheme.line, width: 1.5 } }); // 右下橫
-                pptSlide.addShape(pres.ShapeType.line, { x: boxX+boxW-0.15, y: boxY+boxH-0.15-cLen, w: 0, h: cLen, line: { color: cTheme.line, width: 1.5 } }); // 右下直
+                    // 畫文字底框與四角裝飾線
+                    pptSlide.addShape(pres.ShapeType.rect, { x: boxX, y: boxY, w: boxW, h: boxH, fill: { color: cTheme.shapeFill, transparency: cTheme.shapeOpac }, shadow: { type: 'outer', opacity: 0.08, blur: 10 } });
+                    let cLen = 0.2; 
+                    pptSlide.addShape(pres.ShapeType.line, { x: boxX+0.15, y: boxY+0.15, w: cLen, h: 0, line: { color: cTheme.line, width: 1.5 } }); 
+                    pptSlide.addShape(pres.ShapeType.line, { x: boxX+0.15, y: boxY+0.15, w: 0, h: cLen, line: { color: cTheme.line, width: 1.5 } }); 
+                    pptSlide.addShape(pres.ShapeType.line, { x: boxX+boxW-0.15-cLen, y: boxY+boxH-0.15, w: cLen, h: 0, line: { color: cTheme.line, width: 1.5 } }); 
+                    pptSlide.addShape(pres.ShapeType.line, { x: boxX+boxW-0.15, y: boxY+boxH-0.15-cLen, w: 0, h: cLen, line: { color: cTheme.line, width: 1.5 } }); 
 
-                // 寫入文字
-                let curY = boxY + 0.35, txtW = boxW - 0.7, txtX = boxX + 0.35;
-                
-                if(h1) { 
-                    pptSlide.addText(h1.innerText, { x: txtX, y: curY, w: txtW, h: 0.6, align: 'left', fontFace: font, fontSize: 32, color: cTheme.textMain, fit: 'shrink' }); 
-                    curY += 0.65; 
-                }
-                if(h2) { 
-                    pptSlide.addText(h2.innerText, { x: txtX, y: curY, w: txtW, h: 0.4, align: 'left', fontFace: font, fontSize: 20, color: cTheme.textMuted, fit: 'shrink' }); 
-                    curY += 0.45; 
-                }
-                if(p) { 
-                    let textRuns = parseHtmlToPptxTextRuns(p, cTheme.textMain, cTheme.hl, font);
-                    let finalPHeight = (boxY + boxH) - curY - 0.35; 
-                    if(finalPHeight < 0.5) finalPHeight = 0.5;
+                    // 寫入文字
+                    let curY = boxY + 0.35, txtW = boxW - 0.7, txtX = boxX + 0.35;
                     
-                    pptSlide.addText(textRuns, { x: txtX, y: curY, w: txtW, h: finalPHeight, align: 'left', valign: 'top', fontFace: font, fontSize: 16, lineSpacing: 25, fit: 'shrink', wrap: true }); 
-                }
+                    if(h1) { 
+                        pptSlide.addText(h1.innerText, { x: txtX, y: curY, w: txtW, h: 0.6, align: 'left', fontFace: font, fontSize: 32, color: cTheme.textMain, fit: 'shrink' }); 
+                        curY += 0.65; 
+                    }
+                    if(h2) { 
+                        pptSlide.addText(h2.innerText, { x: txtX, y: curY, w: txtW, h: 0.4, align: 'left', fontFace: font, fontSize: 20, color: cTheme.textMuted, fit: 'shrink' }); 
+                        curY += 0.45; 
+                    }
+                    if(p) { 
+                        let textRuns = parseHtmlToPptxTextRuns(p, cTheme.textMain, cTheme.hl, font);
+                        let finalPHeight = (boxY + boxH) - curY - 0.35; 
+                        if(finalPHeight < 0.5) finalPHeight = 0.5;
+                        pptSlide.addText(textRuns, { x: txtX, y: curY, w: txtW, h: finalPHeight, align: 'left', valign: 'top', fontFace: font, fontSize: 16, lineSpacing: 25, fit: 'shrink', wrap: true }); 
+                    }
 
-                pptSlide.slideNumber = { x: 9.0, y: 5.1, w: 0.8, h: 0.4, align: 'right', fontFace: 'Cinzel', fontSize: 16, color: cTheme.textMuted };
-            });
-            pres.writeFile({ fileName: "AURA_Presentation.pptx" });
+                    pptSlide.slideNumber = { x: 9.0, y: 5.1, w: 0.8, h: 0.4, align: 'right', fontFace: 'Cinzel', fontSize: 16, color: cTheme.textMuted };
+                });
+
+                // 異步等待匯出完成
+                await pres.writeFile({ fileName: "AURA_Presentation.pptx" });
+
+                // 成功後將進度條推滿並關閉視窗
+                clearInterval(progressInterval);
+                progressFill.style.width = '100%';
+                
+                setTimeout(() => {
+                    exportLoader.classList.remove('active');
+                    // 視窗消失後再把進度條歸零備用
+                    setTimeout(() => { progressFill.style.width = '0%'; }, 500);
+                }, 600);
+
+            } catch(err) {
+                console.error(err);
+                clearInterval(progressInterval);
+                exportLoader.classList.remove('active');
+                alert("匯出過程發生錯誤，請稍後重試。");
+            }
         });
     </script>
 </body>
