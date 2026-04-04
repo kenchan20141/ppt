@@ -92,7 +92,7 @@
         .theme-btn:hover { transform: scale(1.15); }
         .theme-btn.active::after { border-color: var(--ui-text); }
 
-        /* 混搭模式子選單 (純圖示點點) */
+        /* 混搭模式子選單 */
         .mix-options { display: none; justify-content: center; gap: 10px; margin-bottom: 2rem; opacity: 0; transition: opacity 0.3s; }
         .mix-options.show { display: flex; opacity: 1; }
         .mix-toggle { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 1.5px solid transparent; opacity: 0.25; transition: 0.3s; transform: scale(0.9); }
@@ -282,10 +282,8 @@
             <button class="theme-btn active" data-theme="classic" style="--c1: #ffffff; --c2: #111111;" title="經典留白"></button>
             <button class="theme-btn" data-theme="midnight" style="--c1: #1e1e1e; --c2: #f5f5f5;" title="深夜影院"></button>
             <button class="theme-btn" data-theme="earth" style="--c1: #e4dccc; --c2: #3e362e;" title="自然地質"></button>
-            <!-- 修訂: 深海湛藍改為極淺灰藍 -->
-            <button class="theme-btn" data-theme="ocean" style="--c1: #0b132b; --c2: #f0f8ff;" title="深海湛藍"></button>
+            <button class="theme-btn" data-theme="ocean" style="--c1: #0b132b; --c2: #f0f8ff;" title="極淺灰藍"></button>
             <button class="theme-btn" data-theme="morandi" style="--c1: #8c9b90; --c2: #f2f4f1;" title="莫蘭迪綠"></button>
-            <!-- 新增: 混搭風格 -->
             <button class="theme-btn btn-mix" data-theme="mix" title="混搭風格"></button>
         </div>
 
@@ -397,11 +395,9 @@
             if (slides.length === 0) return;
             if (currentThemeId === 'mix') {
                 let pool = Array.from(document.querySelectorAll('.mix-toggle.active')).map(el => el.getAttribute('data-mix'));
-                if (pool.length === 0) pool = ['classic']; // 確保至少有一個
-                slides.forEach((slide, index) => {
-                    slide.setAttribute('data-theme', pool[index % pool.length]);
-                });
-                presentationBoard.removeAttribute('data-theme'); // 清空 Wrapper Theme，讓 Slide 自行控制
+                if (pool.length === 0) pool = ['classic']; 
+                slides.forEach((slide, index) => { slide.setAttribute('data-theme', pool[index % pool.length]); });
+                presentationBoard.removeAttribute('data-theme');
             } else {
                 presentationBoard.setAttribute('data-theme', currentThemeId);
                 slides.forEach(slide => slide.removeAttribute('data-theme'));
@@ -413,12 +409,8 @@
                 themeBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentThemeId = btn.getAttribute('data-theme');
-                
-                if (currentThemeId === 'mix') {
-                    mixOptionsPanel.classList.add('show');
-                } else {
-                    mixOptionsPanel.classList.remove('show');
-                }
+                if (currentThemeId === 'mix') mixOptionsPanel.classList.add('show');
+                else mixOptionsPanel.classList.remove('show');
                 updateSlideThemes();
             });
         });
@@ -426,10 +418,7 @@
         mixToggles.forEach(toggle => {
             toggle.addEventListener('click', () => {
                 toggle.classList.toggle('active');
-                // 防止全部取消
-                if(document.querySelectorAll('.mix-toggle.active').length === 0) {
-                    toggle.classList.add('active');
-                }
+                if(document.querySelectorAll('.mix-toggle.active').length === 0) toggle.classList.add('active');
                 updateSlideThemes();
             });
         });
@@ -621,7 +610,7 @@
             });
             slides = document.querySelectorAll('.slide'); if (slides.length === 0) return;
             
-            updateSlideThemes(); // 生成完後立刻套用當前主題或混搭模式
+            updateSlideThemes();
             
             if(currentIndex >= slides.length) currentIndex = 0;
             updateSlides(); controls.style.display = "flex"; actionBar.style.display = "flex"; totalSlideNum.innerText = slides.length;
@@ -639,7 +628,7 @@
         
         document.addEventListener('keydown', (e) => { 
             if (slides.length === 0) return;
-            if (document.activeElement && document.activeElement.isContentEditable) return; // 編輯中不換頁
+            if (document.activeElement && document.activeElement.isContentEditable) return; 
             if ([subKeywordInput, mainKeywordInput, promptInput].includes(document.activeElement)) return;
             if (e.key === 'ArrowRight' && currentIndex < slides.length - 1) { currentIndex++; updateSlides(); } 
             if (e.key === 'ArrowLeft' && currentIndex > 0) { currentIndex--; updateSlides(); } 
@@ -654,8 +643,6 @@
 
             const slideHtml = tempDiv.innerHTML, hlClass = isHighlightMode ? 'class="show-highlight"' : '';
             const styles = Array.from(document.styleSheets[1].cssRules).map(r => r.cssText).join(' ');
-            
-            // 如果是單一主題，Wrapper上會加上 theme，如果是混搭，Wrapper為空，Slide自身帶有 theme
             const wrapperThemeAttr = currentThemeId === 'mix' ? '' : `data-theme="${currentThemeId}"`;
 
             const exportHtml = `<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>AURA Presentation</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Noto+Serif+TC:wght@300;400;500;600&family=Inter:wght@200;300;400&display=swap" rel="stylesheet"><style>${styles} body { justify-content:center; align-items:center; background: var(--ui-bg); } .wrapper { width: 100vw; max-width: 1920px; aspect-ratio: 16/9; position: relative; container-type: inline-size; background:#000; overflow:hidden; } .ui-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 20px; } @media (max-width: 900px) { .wrapper { width: 100%; height: auto; aspect-ratio: auto; min-height: 100vh; display: block; overflow-y: auto;} .slide { position: relative; opacity: 1; display: none; grid-template-columns: 1fr; grid-template-rows: auto auto; padding: 2rem; height: 100vh; overflow-y: auto; } .slide.active { display: grid; } .layout-img-left .feature-img-wrapper, .layout-img-right .feature-img-wrapper, .layout-overlap-left .feature-img-wrapper, .layout-overlap-right .feature-img-wrapper, .layout-bottom-text .feature-img-wrapper { grid-area: auto; height: 40vh; margin-bottom: 1rem; } .layout-img-left .text-content-wrapper, .layout-img-right .text-content-wrapper, .layout-overlap-left .text-content-wrapper, .layout-overlap-right .text-content-wrapper, .layout-center .text-content-wrapper, .layout-bottom-text .text-content-wrapper { grid-area: auto; padding: 2rem; } .slide-number-indicator { display: none; } .text-inner-scroll { overflow: visible; } h1, h2, p { font-size: unset !important; } h1 { font-size: 2rem !important; } h2 { font-size: 1.5rem !important; } p { font-size: 1.1rem !important; } }</style></head><body ${hlClass}><div class="wrapper" id="board" ${wrapperThemeAttr}>${slideHtml}</div><div class="ui-bar"><button class="icon-btn" id="btn-prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button><div class="slide-counter"><span id="num-curr">1</span> / <span id="num-tot">0</span></div><button class="icon-btn" id="btn-next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div><script>const slides = document.querySelectorAll('.slide'); const currEl = document.getElementById('num-curr'); document.getElementById('num-tot').innerText = slides.length; let c = 0; function update() { slides.forEach((s, i) => s.classList.toggle('active', i === c)); currEl.innerText = c + 1; } if(slides.length > 0) update(); document.getElementById('btn-prev').addEventListener('click', () => { if(c > 0) { c--; update(); }}); document.getElementById('btn-next').addEventListener('click', () => { if(c < slides.length - 1) { c++; update(); }}); document.addEventListener('keydown', (e) => { if(e.key === 'ArrowRight' && c < slides.length - 1) { c++; update(); } if(e.key === 'ArrowLeft' && c > 0) { c--; update(); }}); function autoFit() { if(window.innerWidth <= 900) return; document.querySelectorAll('.text-inner-scroll').forEach(w => { let s = 1.0; w.style.setProperty('--text-scale', s); while (w.scrollHeight > w.clientHeight && s > 0.4) { s -= 0.05; w.style.setProperty('--text-scale', s); } }); } setTimeout(autoFit, 100); window.addEventListener('resize', autoFit);<\/script></body></html>`;
@@ -683,9 +670,8 @@
             slides.forEach((slide, index) => {
                 let pptSlide = pres.addSlide();
                 
-                // 動態判斷這一頁的 Theme (支援混搭模式)
                 let slideThemeId = slide.getAttribute('data-theme') || currentThemeId;
-                if (slideThemeId === 'mix') slideThemeId = 'classic'; // 防呆
+                if (slideThemeId === 'mix') slideThemeId = 'classic';
                 const cTheme = themePptxColors[slideThemeId];
 
                 pptSlide.bkgd = cTheme.bg; 
@@ -696,6 +682,8 @@
                 
                 let cList = slide.classList;
                 let boxX=0, boxY=0, boxW=0, boxH=0, imgX=0, imgY=0, imgW=0, imgH=0, hasImg = !cList.contains('layout-center');
+                
+                // 預設佈局尺寸設定
                 if (cList.contains('layout-img-left')) { imgX=0.5; imgY=0.6; imgW=3.5; imgH=4.4; boxX=4.5; boxY=1.0; boxW=5.0; boxH=3.6; } 
                 else if (cList.contains('layout-img-right')) { boxX=0.5; boxY=1.0; boxW=5.0; boxH=3.6; imgX=6.0; imgY=0.6; imgW=3.5; imgH=4.4; } 
                 else if (cList.contains('layout-overlap-left')) { imgX=2.8; imgY=0.3; imgW=6.9; imgH=5.0; boxX=0.5; boxY=1.5; boxW=4.5; boxH=2.6; } 
@@ -703,32 +691,81 @@
                 else if (cList.contains('layout-bottom-text')) { imgX=2.0; imgY=0.3; imgW=6.0; imgH=3.2; boxX=1.0; boxY=3.8; boxW=8.0; boxH=1.5; } 
                 else if (cList.contains('layout-center')) { boxX=2.0; boxY=1.5; boxW=6.0; boxH=2.6; } 
 
+                let h1 = slide.querySelector('h1'), h2 = slide.querySelector('h2'), p = slide.querySelector('p');
+
+                // --- 動態高度計算演算法 (解決文字過多溢出) ---
+                if (p) {
+                    let pText = p.innerText || "";
+                    // 估算每行可容納的字數 (假設中文字約佔 0.24 英寸，這是為 16pt 設計的寬裕估值)
+                    let charsPerLine = Math.floor((boxW - 0.7) / 0.24); 
+                    if (charsPerLine < 10) charsPerLine = 10;
+                    
+                    // 估算總行數 (字數除以每行字數 + 手動斷行數)
+                    let explicitLines = (pText.match(/\n/g) || []).length;
+                    let estimatedLines = Math.ceil(pText.length / charsPerLine) + explicitLines;
+                    
+                    // 以 25pt 行距計算文字需要的總高度 (25pt 約等於 0.35 英寸)
+                    let requiredPHeight = estimatedLines * 0.35; 
+                    
+                    // 總需高度 = 上下留白(0.7) + 標題高度 + 文字高度
+                    let totalReqH = 0.7 + requiredPHeight; 
+                    if (h1) totalReqH += 0.65;
+                    if (h2) totalReqH += 0.45;
+                    
+                    // 若需要的高度大於預設高度，則動態擴大容器
+                    if (totalReqH > boxH) {
+                        let heightDiff = totalReqH - boxH;
+                        boxH = totalReqH;
+                        
+                        // 調整方框位置避免超過畫布底線
+                        if (cList.contains('layout-bottom-text')) {
+                            boxY -= heightDiff; // 底部佈局只往上長
+                        } else {
+                            boxY -= (heightDiff / 2); // 其它佈局向中心上下均勻長大
+                        }
+                        
+                        // 畫布邊界安全鎖 (16:9 畫布高度為 5.625)
+                        if (boxY < 0.2) boxY = 0.2;
+                        if (boxY + boxH > 5.4) {
+                            boxH = 5.4 - boxY; // 極限狀態壓縮高度，交給 fit: shrink 作最後防線
+                        }
+                    }
+                }
+                // ---------------------------------------------
+
+                // 畫配圖
                 if (hasImg) {
                     pptSlide.addShape(pres.ShapeType.rect, { x: imgX, y: imgY, w: imgW, h: imgH, fill: { color: cTheme.shapeFill }, shadow: { type: 'outer', opacity: 0.15, blur: 5 }});
                     let featureImg = slide.querySelector('.feature-img-wrapper img');
                     if (featureImg) try { pptSlide.addImage({ path: featureImg.src, x: imgX+0.1, y: imgY+0.1, sizing: { type: 'cover', w: imgW-0.2, h: imgH-0.2 } }); } catch(e){}
                 }
 
+                // 畫文字底框與四角裝飾線 (這裡會自動採用我們剛算好的「動態 boxH 與 boxY」)
                 pptSlide.addShape(pres.ShapeType.rect, { x: boxX, y: boxY, w: boxW, h: boxH, fill: { color: cTheme.shapeFill, transparency: cTheme.shapeOpac }, shadow: { type: 'outer', opacity: 0.08, blur: 10 } });
                 let cLen = 0.2; 
-                pptSlide.addShape(pres.ShapeType.line, { x: boxX+0.15, y: boxY+0.15, w: cLen, h: 0, line: { color: cTheme.line, width: 1.5 } });
-                pptSlide.addShape(pres.ShapeType.line, { x: boxX+0.15, y: boxY+0.15, w: 0, h: cLen, line: { color: cTheme.line, width: 1.5 } });
-                pptSlide.addShape(pres.ShapeType.line, { x: boxX+boxW-0.15-cLen, y: boxY+boxH-0.15, w: cLen, h: 0, line: { color: cTheme.line, width: 1.5 } });
-                pptSlide.addShape(pres.ShapeType.line, { x: boxX+boxW-0.15, y: boxY+boxH-0.15-cLen, w: 0, h: cLen, line: { color: cTheme.line, width: 1.5 } });
+                pptSlide.addShape(pres.ShapeType.line, { x: boxX+0.15, y: boxY+0.15, w: cLen, h: 0, line: { color: cTheme.line, width: 1.5 } }); // 左上橫
+                pptSlide.addShape(pres.ShapeType.line, { x: boxX+0.15, y: boxY+0.15, w: 0, h: cLen, line: { color: cTheme.line, width: 1.5 } }); // 左上直
+                pptSlide.addShape(pres.ShapeType.line, { x: boxX+boxW-0.15-cLen, y: boxY+boxH-0.15, w: cLen, h: 0, line: { color: cTheme.line, width: 1.5 } }); // 右下橫
+                pptSlide.addShape(pres.ShapeType.line, { x: boxX+boxW-0.15, y: boxY+boxH-0.15-cLen, w: 0, h: cLen, line: { color: cTheme.line, width: 1.5 } }); // 右下直
 
-                let h1 = slide.querySelector('h1'), h2 = slide.querySelector('h2'), p = slide.querySelector('p');
-                
-                // [修訂]: 修正縮放與行距邏輯
+                // 寫入文字
                 let curY = boxY + 0.35, txtW = boxW - 0.7, txtX = boxX + 0.35;
                 
-                if(h1) { pptSlide.addText(h1.innerText, { x: txtX, y: curY, w: txtW, h: 0.6, align: 'left', fontFace: font, fontSize: 32, color: cTheme.textMain, fit: 'shrink' }); curY += 0.7; }
-                if(h2) { pptSlide.addText(h2.innerText, { x: txtX, y: curY, w: txtW, h: 0.4, align: 'left', fontFace: font, fontSize: 20, color: cTheme.textMuted, fit: 'shrink' }); curY += 0.5; }
+                if(h1) { 
+                    pptSlide.addText(h1.innerText, { x: txtX, y: curY, w: txtW, h: 0.6, align: 'left', fontFace: font, fontSize: 32, color: cTheme.textMain, fit: 'shrink' }); 
+                    curY += 0.65; 
+                }
+                if(h2) { 
+                    pptSlide.addText(h2.innerText, { x: txtX, y: curY, w: txtW, h: 0.4, align: 'left', fontFace: font, fontSize: 20, color: cTheme.textMuted, fit: 'shrink' }); 
+                    curY += 0.45; 
+                }
                 if(p) { 
                     let textRuns = parseHtmlToPptxTextRuns(p, cTheme.textMain, cTheme.hl, font);
-                    // 嚴格確保文字框的高度上限，避免觸碰裝飾線
-                    let pHeight = (boxY + boxH) - curY - 0.35;
-                    // 放回完美的行距 25，利用嚴格的 pHeight 強制 shrink 發揮作用
-                    pptSlide.addText(textRuns, { x: txtX, y: curY, w: txtW, h: pHeight, align: 'left', valign: 'top', fontFace: font, fontSize: 16, lineSpacing: 25, fit: 'shrink' }); 
+                    let finalPHeight = (boxY + boxH) - curY - 0.35; 
+                    if(finalPHeight < 0.5) finalPHeight = 0.5;
+                    
+                    // 恢復 lineSpacing: 25。現在因為容器被動態拉高了，所以不會溢出！
+                    pptSlide.addText(textRuns, { x: txtX, y: curY, w: txtW, h: finalPHeight, align: 'left', valign: 'top', fontFace: font, fontSize: 16, lineSpacing: 25, fit: 'shrink', wrap: true }); 
                 }
 
                 pptSlide.slideNumber = { x: 9.0, y: 5.1, w: 0.8, h: 0.4, align: 'right', fontFace: 'Cinzel', fontSize: 16, color: cTheme.textMuted };
