@@ -668,17 +668,39 @@
 
         let manualRefreshIndex = 100; 
         function refreshImage(imgEl) {
-            // 此處為防呆機制：如果圖片已經在刷新中，就忽略新的要求
+            // 防呆機制：避免多次重複加載或在純預設圖片模式下執行
             if(imgEl.classList.contains('reloading') || currentLayoutMode === 2) return; 
             
-            imgEl.classList.add('reloading'); // 正確標示加載中
+            imgEl.classList.add('reloading'); 
             manualRefreshIndex++; 
             let newSrc = getImageUrl(imgEl.getAttribute('data-main'), imgEl.getAttribute('data-sub'), manualRefreshIndex);
             
-            let tempImg = new Image(); tempImg.crossOrigin = "anonymous";
-            tempImg.onload = () => { imgEl.src = newSrc; imgEl.classList.remove('reloading'); };
-            tempImg.onerror = () => { imgEl.classList.remove('reloading'); }; 
-            tempImg.src = newSrc;
+            // 使用一個綁定在元素上的 Image 物件以防止被垃圾回收(GC)，確保 onload 必定觸發
+            let tempLoader = new Image();
+            tempLoader.crossOrigin = "anonymous";
+            imgEl._tempLoader = tempLoader; 
+
+            tempLoader.onload = function() { 
+                imgEl.src = newSrc; 
+                imgEl.classList.remove('reloading'); 
+                delete imgEl._tempLoader;
+            };
+            tempLoader.onerror = function() { 
+                // 若被 CORS 阻擋等原因報錯，仍強制切換圖片並移除加載狀態
+                imgEl.src = newSrc; 
+                imgEl.classList.remove('reloading'); 
+                delete imgEl._tempLoader;
+            }; 
+            
+            // 安全機制：若由於網路等未知原因導致 onload/onerror 完全未觸發，6秒後強制解除鎖定
+            setTimeout(() => {
+                if(imgEl.classList.contains('reloading')) {
+                    imgEl.classList.remove('reloading');
+                    delete imgEl._tempLoader;
+                }
+            }, 6000);
+
+            tempLoader.src = newSrc;
         }
 
         function triggerCurrentSlideRefresh() {
@@ -804,7 +826,7 @@
                         featureImg.setAttribute('data-main', globalMainKeyword); 
                         featureImg.setAttribute('data-sub', initialSub);
                         
-                        // ✅ 解除邏輯死結：將檢查與刷新全交給 refreshImage 負責
+                        // 交給全域邏輯執行，避免事件或類別殘留導致的假死
                         featureImg.addEventListener('click', function(e) {
                             e.preventDefault();
                             if (this.classList.contains('reloading') || currentLayoutMode === 2) return; 
@@ -832,9 +854,10 @@
                             usedKws.push(newSub); 
                             sessionStorage.setItem(storageKey, JSON.stringify(usedKws)); 
                             this.setAttribute('data-sub', newSub); 
+                            
+                            // 同步更新上方的子關鍵詞輸入框，確保所見即所得
                             if (slides[currentIndex] === newSlide) subKeywordInput.value = newSub; 
                             
-                            // 交給 refreshImage 執行換圖與加載動畫
                             refreshImage(this); 
                         });
                     }
