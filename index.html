@@ -21,7 +21,7 @@
             --ui-hl: #D97706;
         }
 
-        /* --- 簡報風格變數 (改綁定於 .slide 與 .presentation-wrapper) --- */
+        /* --- 簡報風格變數 --- */
         .presentation-wrapper, .slide[data-theme="classic"] {
             --slide-bg: #ffffff; --slide-glass: rgba(255, 255, 255, 0.85);
             --slide-text: #111111; --slide-muted: #666666;
@@ -95,9 +95,17 @@
         /* 混搭模式子選單 */
         .mix-options { display: none; justify-content: center; gap: 10px; margin-bottom: 2rem; opacity: 0; transition: opacity 0.3s; }
         .mix-options.show { display: flex; opacity: 1; }
-        .mix-toggle { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 1.5px solid transparent; opacity: 0.25; transition: 0.3s; transform: scale(0.9); }
-        .mix-toggle:hover { opacity: 0.6; }
-        .mix-toggle.active { opacity: 1; transform: scale(1.1); box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+        
+        /* 修改：讓所有混搭點點都擁有統一柔和外框，移除生硬黑色邊 */
+        .mix-toggle { 
+            width: 14px; height: 14px; border-radius: 50%; cursor: pointer; 
+            border: 1.5px solid var(--ui-border); opacity: 0.3; transition: 0.3s; transform: scale(0.9); 
+        }
+        .mix-toggle:hover { opacity: 0.7; }
+        .mix-toggle.active { 
+            opacity: 1; transform: scale(1.1); box-shadow: 0 2px 6px rgba(0,0,0,0.15); 
+            border-color: var(--ui-muted); 
+        }
 
         .toolbar { display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 1rem; height: 36px;}
         .icon-toggle { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; background: transparent; border: 1px solid transparent; transition: all 0.3s ease; color: var(--ui-icon); }
@@ -177,6 +185,7 @@
         .art-frame:hover img { filter: brightness(0.85); transform: scale(0.995); }
         .art-frame img.reloading { filter: blur(8px) grayscale(50%); transform: scale(0.98); pointer-events: none; }
 
+        /* 版式定義 */
         .layout-img-left .feature-img-wrapper { grid-area: 2 / 1 / 12 / 6; } .layout-img-left .text-content-wrapper { grid-area: 3 / 6 / 11 / 13; }
         .layout-img-right .text-content-wrapper { grid-area: 3 / 1 / 11 / 8; } .layout-img-right .feature-img-wrapper { grid-area: 2 / 8 / 12 / 13; }
         .layout-overlap-left .feature-img-wrapper { grid-area: 1 / 4 / 13 / 13; } .layout-overlap-left .text-content-wrapper { grid-area: 4 / 1 / 10 / 7; z-index: 4; }
@@ -184,6 +193,19 @@
         .layout-center .text-content-wrapper { grid-area: 3 / 2 / 11 / 12; align-items: flex-start; justify-content: center;} .layout-center .feature-img-wrapper { display: none; }
         .layout-bottom-text .feature-img-wrapper { grid-area: 1 / 3 / 8 / 11; } .layout-bottom-text .text-content-wrapper { grid-area: 8 / 2 / 13 / 12; flex-direction: column; align-items: flex-start; justify-content: center; padding: 2cqw 4cqw;}
         .layout-bottom-text .text-inner-scroll p { margin-top: 0; }
+
+        /* 修改：解決 Overlap 版式圖片過度搶奪文字視覺的問題 */
+        /* 利用 CSS 漸層遮罩讓圖片向文字方向柔和淡出，維持層次感且不影響其他佈局 */
+        .layout-overlap-left .feature-img-wrapper {
+            opacity: 0.95;
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,1) 45%);
+            mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,1) 45%);
+        }
+        .layout-overlap-right .feature-img-wrapper {
+            opacity: 0.95;
+            -webkit-mask-image: linear-gradient(to left, transparent 0%, rgba(0,0,0,1) 45%);
+            mask-image: linear-gradient(to left, transparent 0%, rgba(0,0,0,1) 45%);
+        }
 
         .slide-number-indicator { position: absolute; bottom: 2cqw; right: 3cqw; font-size: 1.2cqw; font-family: 'Cinzel', serif; color: var(--slide-muted); letter-spacing: 0.2cqw; z-index: 5; pointer-events: none; transition: color 0.5s;}
 
@@ -289,7 +311,7 @@
         </div>
     </div>
 
-    <!-- 匯出 PPTX 極簡載入畫面 (全畫面無文字) -->
+    <!-- 匯出 PPTX 極簡載入畫面 -->
     <div class="export-loader-overlay" id="exportLoader">
         <div class="minimal-progress-track">
             <div class="minimal-progress-fill" id="exportProgressFill"></div>
@@ -314,13 +336,13 @@
             <button class="theme-btn btn-mix" data-theme="mix" title="混搭風格"></button>
         </div>
 
-        <!-- 混搭子選單 -->
+        <!-- 修改：混搭子選單移除了生硬的 inline border-color -->
         <div class="mix-options" id="mixOptions">
-            <div class="mix-toggle active" data-mix="classic" style="background: #ffffff; border-color: #111;"></div>
-            <div class="mix-toggle active" data-mix="midnight" style="background: #1e1e1e; border-color: #f5f5f5;"></div>
-            <div class="mix-toggle active" data-mix="earth" style="background: #e4dccc; border-color: #3e362e;"></div>
-            <div class="mix-toggle active" data-mix="ocean" style="background: #0b132b; border-color: #f0f8ff;"></div>
-            <div class="mix-toggle active" data-mix="morandi" style="background: #8c9b90; border-color: #f2f4f1;"></div>
+            <div class="mix-toggle active" data-mix="classic" style="background: #ffffff;"></div>
+            <div class="mix-toggle active" data-mix="midnight" style="background: #1e1e1e;"></div>
+            <div class="mix-toggle active" data-mix="earth" style="background: #e4dccc;"></div>
+            <div class="mix-toggle active" data-mix="ocean" style="background: #0b132b;"></div>
+            <div class="mix-toggle active" data-mix="morandi" style="background: #8c9b90;"></div>
         </div>
 
         <div class="toolbar">
@@ -779,7 +801,7 @@
             exportLoader.classList.add('active');
             progressFill.style.width = '0%';
 
-            // 模擬順滑的預備進度 (由於JS主執行緒在執行匯出打包時會阻塞)
+            // 模擬順滑的預備進度
             let progress = 0;
             const progressInterval = setInterval(() => {
                 progress += (85 - progress) * 0.08; 
