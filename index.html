@@ -144,21 +144,18 @@
 
         .slide > .bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: var(--bg-opacity); z-index: 1; pointer-events: none; filter: grayscale(100%); transition: opacity 0.3s; }
 
-        /* [核心修正1] 設定 pointer-events 允許穿透玻璃背景 */
         .text-content-wrapper {
             position: relative; z-index: 3; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
             background: var(--slide-glass); backdrop-filter: blur(15px);
             border: 1px solid var(--slide-border); padding: 3cqw 3.5cqw;
             box-shadow: 0 15px 40px rgba(0,0,0,0.06); border-radius: 2px; transition: background 0.5s, border-color 0.5s;
             height: fit-content; max-height: 100%; align-self: center;
-            pointer-events: none; /* 讓點擊事件可以穿透玻璃區塊的空白處，到達圖片 */
         }
         .text-content-wrapper::before, .text-content-wrapper::after { content: ''; position: absolute; width: 1.5cqw; height: 1.5cqw; border: 1.5px solid var(--slide-border-dark); pointer-events: none; transition: border-color 0.5s;}
         .text-content-wrapper::before { top: 1cqw; left: 1cqw; border-right: none; border-bottom: none; }
         .text-content-wrapper::after { bottom: 1cqw; right: 1cqw; border-left: none; border-top: none; }
 
-        /* [核心修正2] 將文字區塊內部重新啟用點擊，確保能編輯文字 */
-        .text-inner-scroll { overflow: hidden; width: 100%; max-height: 100%; display: flex; flex-direction: column; --text-scale: 1; pointer-events: auto; }
+        .text-inner-scroll { overflow: hidden; width: 100%; max-height: 100%; display: flex; flex-direction: column; --text-scale: 1; }
         span[data-hl="true"] { transition: color 0.3s ease, font-weight 0.3s; color: inherit; font-weight: inherit; }
         body.show-highlight span[data-hl="true"] { color: var(--slide-hl); font-weight: 600; }
 
@@ -171,12 +168,10 @@
         .text-inner-scroll [contenteditable="true"] { outline: none; border-radius: 4px; padding: 0 4px; margin-left: -4px; transition: background 0.3s; }
         .text-inner-scroll [contenteditable="true"]:focus { background: var(--slide-edit-bg); cursor: text; }
 
-        /* [核心修正3] 確保行動版圖片容器自身啟用事件並取消點擊高光干擾 */
+        /* 一般版式 */
         .feature-img-wrapper { 
             position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; 
             opacity: var(--feature-img-opacity); filter: contrast(1.05) saturate(0.85); transition: opacity 0.3s, transform 0.5s, filter 0.5s;
-            pointer-events: auto; 
-            -webkit-tap-highlight-color: transparent;
         }
         
         .art-frame { position: relative; padding: 0.8cqw; background: var(--slide-frame); border: 1px solid var(--slide-border); box-shadow: 0 15px 45px rgba(0,0,0,0.1); max-width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; transition: background 0.5s, border-color 0.5s;}
@@ -204,12 +199,12 @@
         .layout-bottom-text .text-inner-scroll p { margin-top: 0; }
 
         /* =======================================================
-           抽象幾何裝飾模式
+           抽象幾何裝飾模式 (模式 1 & 2 共用佈局)
            ======================================================= */
         body.use-geometric .slide .feature-img-wrapper {
             filter: grayscale(30%) sepia(10%) contrast(1.1);
             -webkit-mask-image: none !important; mask-image: none !important;
-            z-index: 2; pointer-events: auto;
+            z-index: 2; 
         }
         
         body.use-geometric .slide .art-frame {
@@ -280,6 +275,7 @@
         .btn-export { background: transparent; border: 1px solid var(--ui-border); padding: 6px 12px; font-size: 0.75rem; font-family: 'Cinzel', serif; letter-spacing: 2px; cursor: pointer; transition: 0.2s; color: var(--ui-text); border-radius: 4px; }
         .btn-export:hover { border-color: var(--ui-text); background: var(--ui-text); color: var(--ui-surface); }
         
+        .sliders-wrapper { display: flex; align-items: center; gap: 15px; }
         .opacity-control { display: flex; align-items: center; gap: 8px; border-right: 1px solid var(--ui-border); padding-right: 15px; transition: border-color 0.5s;}
         .opacity-control svg { width: 16px; height: 16px; color: var(--ui-icon); }
         input[type=range] { -webkit-appearance: none; width: 60px; background: transparent; cursor: pointer; }
@@ -317,6 +313,7 @@
         .custom-modal-btn-confirm { background: var(--ui-text); color: var(--ui-surface); border: 1px solid var(--ui-text); }
         .custom-modal-btn-confirm:hover { background: transparent; color: var(--ui-text); }
 
+        /* 手機版樣式與佈局修正 */
         @media (max-width: 1024px) {
             body { flex-direction: column; height: 100dvh; overflow: hidden; }
             .sidebar { width: 100%; height: 100dvh; max-height: 100dvh; padding: 2rem; border-right: none; overflow-y: auto; flex: none; transition: transform 0.4s cubic-bezier(0.25,0.8,0.25,1); }
@@ -331,8 +328,16 @@
             body.preview-mode .main-content { transform: translateX(0); }
 
             .presentation-wrapper { width: 100%; max-width: 100%; }
-            .action-bar { top: 1rem; left: 1rem; right: 1rem; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
-            .mobile-back-btn { display: flex; } 
+            
+            /* 行動版選單換行調整 */
+            .action-bar { top: 1rem; left: 1rem; right: 1rem; flex-wrap: wrap; gap: 10px; justify-content: flex-start; align-items: center; }
+            .mobile-back-btn { display: flex; margin-right: 5px; flex-shrink: 0; } 
+            .sub-keyword-group { flex-grow: 1; min-width: 140px; margin-right: 0; }
+            .btn-export { flex-shrink: 0; }
+            /* 強制透明度控制 Bar 換行 */
+            .sliders-wrapper { flex-basis: 100%; display: flex; justify-content: flex-end; gap: 15px; padding-top: 10px; margin-top: 5px; border-top: 1px solid var(--ui-border); }
+            .opacity-control { border-right: none; padding-right: 0; }
+
             .controls-container { bottom: 1rem; }
             .mix-options { margin-bottom: 1.5rem; }
 
@@ -452,16 +457,19 @@
                 <input type="text" id="subKeywordInput" placeholder="子關鍵詞">
                 <button class="btn-refresh-img" id="btnRefreshImg" title="依此關鍵詞重新生成"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 1 0 2.63-6.37L21 8"></path></svg></button>
             </div>
-            <div class="opacity-control" title="調整背景濃度">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20v-20z" fill="currentColor" opacity="0.3"/></svg>
-                <input type="range" id="opacitySlider" min="0" max="100" value="20">
-            </div>
-            <div class="opacity-control" title="調整主圖透明度">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                <input type="range" id="imgOpacitySlider" min="10" max="100" value="75">
-            </div>
             <button id="btnExportHtml" class="btn-export">HTML</button>
             <button id="btnExportPptx" class="btn-export">PPTX</button>
+            
+            <div class="sliders-wrapper">
+                <div class="opacity-control" title="調整背景濃度">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20v-20z" fill="currentColor" opacity="0.3"/></svg>
+                    <input type="range" id="opacitySlider" min="0" max="100" value="20">
+                </div>
+                <div class="opacity-control" title="調整主圖透明度">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <input type="range" id="imgOpacitySlider" min="10" max="100" value="75">
+                </div>
+            </div>
         </div>
 
         <div class="presentation-wrapper" id="presentationBoard">
@@ -642,7 +650,26 @@
         function triggerCurrentSlideRefresh() {
             if (slides.length === 0 || currentLayoutMode === 2) return; 
             let imgEl = slides[currentIndex].querySelector('.art-frame img');
-            if (imgEl) { imgEl.setAttribute('data-sub', subKeywordInput.value.trim()); refreshImage(imgEl); }
+            if (imgEl) { 
+                let inputVal = subKeywordInput.value.trim();
+                // 如果使用者沒有輸入任何文字，卻按了更新按鈕，幫他自動產生下一個可用的關鍵字！
+                if (!inputVal) {
+                    let currentP = slides[currentIndex].querySelector('p');
+                    let slideText = currentP ? currentP.textContent : ""; 
+                    let storageKey = `aura_slide_${currentIndex}_kws`;
+                    let usedKws = JSON.parse(sessionStorage.getItem(storageKey) || "[]");
+                    let potentialKws = getTopKeywords(slideText, 20);
+                    let newSub = potentialKws.find(kw => !usedKws.includes(kw));
+                    if (newSub) {
+                        usedKws.push(newSub);
+                        sessionStorage.setItem(storageKey, JSON.stringify(usedKws));
+                        inputVal = newSub;
+                        subKeywordInput.value = newSub;
+                    }
+                }
+                imgEl.setAttribute('data-sub', inputVal); 
+                refreshImage(imgEl); 
+            }
         }
         
         btnRefreshImg.addEventListener('click', triggerCurrentSlideRefresh);
@@ -749,6 +776,7 @@
                 textWrapper.appendChild(scrollArea); newSlide.appendChild(textWrapper);
 
                 if (assignedLayout !== 'layout-center') {
+                    // 【關鍵修正】這裡必須使用 textContent 而非 innerText，確保在 DOM 尚未附加前能正確抓出內容
                     const p = slide.querySelector('p'), imgWrapper = document.createElement('div'); imgWrapper.className = 'feature-img-wrapper';
                     const artFrame = document.createElement('div'); artFrame.className = 'art-frame';
                     const featureImg = document.createElement('img'); featureImg.crossOrigin = "anonymous";
@@ -757,16 +785,16 @@
                         featureImg.src = `https://picsum.photos/seed/${Math.floor(Math.random() * 99999)}/800/800`;
                         artFrame.classList.add('no-hover'); 
                     } else { 
-                        /* 核心修正：使用 textContent 來確保在隱藏狀態或手機端下依然能成功提取文字 */
                         let initialSub = p && p.textContent ? extractKeywords(p.textContent) : "";
                         featureImg.src = getImageUrl(globalMainKeyword, initialSub, index);
                         featureImg.setAttribute('data-main', globalMainKeyword); 
                         featureImg.setAttribute('data-sub', initialSub);
                         
-                        featureImg.addEventListener('click', function(e) {
+                        featureImg.addEventListener('click', function() {
                             if (this.classList.contains('reloading') || currentLayoutMode === 2) return; 
                             this.classList.add('reloading');
                             let currentP = newSlide.querySelector('p');
+                            // 【關鍵修正】這裡同樣修正為 textContent
                             let slideText = currentP ? currentP.textContent : ""; 
                             if (!slideText.trim()) { this.classList.remove('reloading'); return; }
 
@@ -907,31 +935,22 @@
                 let natW = imgEl.naturalWidth || 800;
                 let natH = imgEl.naturalHeight || 800;
                 let minSide = Math.min(natW, natH);
-                
                 let size = Math.min(minSide, 800); 
-                
                 const canvas = document.createElement('canvas');
                 canvas.width = size; canvas.height = size;
                 const ctx = canvas.getContext('2d');
-                
                 ctx.beginPath();
                 ctx.arc(size/2, size/2, size/2, 0, 2*Math.PI);
                 ctx.closePath();
                 ctx.clip();
-                
                 ctx.filter = 'grayscale(30%) sepia(10%) contrast(1.1)';
-                
                 let sw = natW, sh = natH;
                 let sx = 0, sy = 0;
                 if (sw > sh) { sx = (sw - sh) / 2; sw = sh; }
                 else { sy = (sh - sw) / 2; sh = sw; }
-                
                 ctx.drawImage(imgEl, sx, sy, sw, sh, 0, 0, size, size);
                 return canvas.toDataURL('image/png'); 
-            } catch(e) {
-                console.warn("Canvas crop failed, fallback to original", e);
-                return imgEl.src;
-            }
+            } catch(e) { return imgEl.src; }
         }
 
         document.getElementById('btnExportPptx').addEventListener('click', async () => {
@@ -968,23 +987,11 @@
                     
                     if (isGeometricLayout) {
                         boxX = 1.5; boxY = 1.5; boxW = 7.0; boxH = 2.6;
-                        
-                        if (cList.contains('layout-img-left')) { 
-                            imgW = 5.5; imgH = 5.5; imgX = -2.75; imgY = 0.0625; 
-                        }
-                        else if (cList.contains('layout-img-right')) { 
-                            imgW = 5.5; imgH = 5.5; imgX = 7.25; imgY = 0.0625; 
-                        }
-                        else if (cList.contains('layout-overlap-left')) { 
-                            imgW = 4.5; imgH = 4.5; imgX = -1.0; imgY = 1.5; 
-                        }
-                        else if (cList.contains('layout-overlap-right')) { 
-                            imgW = 5.5; imgH = 5.5; imgX = 6.0; imgY = -2.75; 
-                        }
-                        else if (cList.contains('layout-bottom-text')) { 
-                            imgW = 5.5; imgH = 5.5; imgX = 2.25; imgY = 2.875; 
-                            boxY = 0.8;
-                        }
+                        if (cList.contains('layout-img-left')) { imgW = 5.5; imgH = 5.5; imgX = -2.75; imgY = 0.0625; }
+                        else if (cList.contains('layout-img-right')) { imgW = 5.5; imgH = 5.5; imgX = 7.25; imgY = 0.0625; }
+                        else if (cList.contains('layout-overlap-left')) { imgW = 4.5; imgH = 4.5; imgX = -1.0; imgY = 1.5; }
+                        else if (cList.contains('layout-overlap-right')) { imgW = 5.5; imgH = 5.5; imgX = 6.0; imgY = -2.75; }
+                        else if (cList.contains('layout-bottom-text')) { imgW = 5.5; imgH = 5.5; imgX = 2.25; imgY = 2.875; boxY = 0.8; }
                     } else {
                         if (cList.contains('layout-img-left')) { imgX=0.5; imgY=0.6; imgW=3.5; imgH=4.4; boxX=4.5; boxY=1.0; boxW=5.0; boxH=3.6; } 
                         else if (cList.contains('layout-img-right')) { boxX=0.5; boxY=1.0; boxW=5.0; boxH=3.6; imgX=6.0; imgY=0.6; imgW=3.5; imgH=4.4; } 
@@ -1020,26 +1027,17 @@
                         if (!isGeometricLayout && cList.contains('layout-bottom-text')) boxY += heightDiff; else boxY += (heightDiff / 2);
                     }
 
+                    // 渲染主配圖
                     if (hasImg) {
                         let featureImg = slide.querySelector('.feature-img-wrapper img');
                         if (featureImg) {
                             try { 
                                 if (isGeometricLayout) {
                                     let circleBase64 = cropImageToCircleBase64(featureImg);
-                                    pptSlide.addImage({ 
-                                        data: circleBase64, 
-                                        x: imgX, y: imgY, w: imgW, h: imgH, 
-                                        transparency: pptxImgOpacity,
-                                        shadow: { type: 'outer', opacity: 0.15, blur: 8 }
-                                    }); 
+                                    pptSlide.addImage({ data: circleBase64, x: imgX, y: imgY, w: imgW, h: imgH, transparency: pptxImgOpacity, shadow: { type: 'outer', opacity: 0.15, blur: 8 }}); 
                                 } else {
                                     pptSlide.addShape(pres.ShapeType.rect, { x: imgX, y: imgY, w: imgW, h: imgH, fill: { color: cTheme.shapeFill }, shadow: { type: 'outer', opacity: 0.15, blur: 5 }});
-                                    pptSlide.addImage({ 
-                                        path: featureImg.src, 
-                                        x: imgX + 0.1, y: imgY + 0.1, 
-                                        sizing: { type: 'cover', w: imgW - 0.2, h: imgH - 0.2 },
-                                        transparency: pptxImgOpacity
-                                    }); 
+                                    pptSlide.addImage({ path: featureImg.src, x: imgX + 0.1, y: imgY + 0.1, sizing: { type: 'cover', w: imgW - 0.2, h: imgH - 0.2 }, transparency: pptxImgOpacity}); 
                                 }
                             } catch(e) { console.error(e); }
                         }
