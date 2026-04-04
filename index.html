@@ -17,6 +17,7 @@
             --ui-muted: #888888;
             --ui-border: #eaeaea;
             --bg-opacity: 0.08; 
+            --feature-img-opacity: 0.75; /* 主圖預設透明度 */
             --ui-icon: #888888;
             --ui-hl: #D97706;
         }
@@ -78,37 +79,27 @@
         }
         .brand::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 1px; background-color: var(--ui-border); }
 
-        /* --- 主題選單與混搭選項 --- */
         .theme-selector { display: flex; justify-content: center; gap: 12px; margin-bottom: 1rem; }
         .theme-btn {
             width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: none; outline: none;
             background: linear-gradient(135deg, var(--c1) 50%, var(--c2) 50%);
             box-shadow: 0 2px 5px rgba(0,0,0,0.15); transition: transform 0.3s, box-shadow 0.3s; position: relative;
         }
-        .theme-btn.btn-mix {
-            background: conic-gradient(#ffffff 0 72deg, #121212 72deg 144deg, #e4dccc 144deg 216deg, #0b132b 216deg 288deg, #8c9b90 288deg 360deg);
-        }
+        .theme-btn.btn-mix { background: conic-gradient(#ffffff 0 72deg, #121212 72deg 144deg, #e4dccc 144deg 216deg, #0b132b 216deg 288deg, #8c9b90 288deg 360deg); }
         .theme-btn::after { content: ''; position: absolute; top: -5px; left: -5px; right: -5px; bottom: -5px; border-radius: 50%; border: 1.5px solid transparent; transition: border-color 0.3s; }
         .theme-btn:hover { transform: scale(1.15); }
         .theme-btn.active::after { border-color: var(--ui-text); }
 
-        /* 混搭模式子選單 */
         .mix-options { display: none; justify-content: center; gap: 10px; margin-bottom: 2rem; opacity: 0; transition: opacity 0.3s; }
         .mix-options.show { display: flex; opacity: 1; }
-        
-       /* 修改：混搭點點改為立體白圈風格 */
-       .mix-toggle { 
+        .mix-toggle { 
             width: 14px; height: 14px; border-radius: 50%; cursor: pointer; 
-            border: 1.4px solid #ffffff; /* 縮細為 1px 白框，看起來更精緻 */
-            box-shadow: 0 1px 3px rgba(0,0,0,0.15); /* 陰影跟著調輕，避免看起來像灰框 */
+            border: 1.4px solid #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.15); 
             opacity: 0.3; transition: 0.3s; transform: scale(0.9); 
         }
         .mix-toggle:hover { opacity: 0.7; }
-        .mix-toggle.active { 
-            opacity: 1; transform: scale(1.2); 
-            border-color: #ffffff; 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2); /* 選中時的陰影也稍微調柔和 */
-        }
+        .mix-toggle.active { opacity: 1; transform: scale(1.2); border-color: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+
         .toolbar { display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 1rem; height: 36px;}
         .icon-toggle { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; background: transparent; border: 1px solid transparent; transition: all 0.3s ease; color: var(--ui-icon); }
         .icon-toggle:hover { color: var(--ui-text); background: var(--ui-bg); }
@@ -119,7 +110,7 @@
         #highlightToggle svg path.hl-line { transition: opacity 0.3s; opacity: 0; }
         #highlightToggle.active-mode svg path.hl-line { opacity: 0.8; stroke: var(--ui-hl); }
 
-        .keyword-input-wrapper { margin-bottom: 1.5rem; }
+        .keyword-input-wrapper { margin-bottom: 1.5rem; transition: opacity 0.3s, height 0.3s; }
         .keyword-input-wrapper input { width: 100%; padding: 0.8rem 0; font-family: 'Noto Serif TC', serif; font-size: 0.95rem; color: var(--ui-text); background: transparent; border: none; border-bottom: 1px solid var(--ui-border); outline: none; transition: 0.3s; }
         .keyword-input-wrapper input:focus { border-bottom-color: var(--ui-text); }
         .keyword-input-wrapper input::placeholder { color: var(--ui-muted); font-weight: 300; font-family: 'Inter', sans-serif; letter-spacing: 1px; }
@@ -158,9 +149,7 @@
             background: var(--slide-glass); backdrop-filter: blur(15px);
             border: 1px solid var(--slide-border); padding: 3cqw 3.5cqw;
             box-shadow: 0 15px 40px rgba(0,0,0,0.06); border-radius: 2px; transition: background 0.5s, border-color 0.5s;
-            height: fit-content; 
-            max-height: 100%;
-            align-self: center;
+            height: fit-content; max-height: 100%; align-self: center;
         }
         .text-content-wrapper::before, .text-content-wrapper::after { content: ''; position: absolute; width: 1.5cqw; height: 1.5cqw; border: 1.5px solid var(--slide-border-dark); pointer-events: none; transition: border-color 0.5s;}
         .text-content-wrapper::before { top: 1cqw; left: 1cqw; border-right: none; border-bottom: none; }
@@ -170,44 +159,104 @@
         span[data-hl="true"] { transition: color 0.3s ease, font-weight 0.3s; color: inherit; font-weight: inherit; }
         body.show-highlight span[data-hl="true"] { color: var(--slide-hl); font-weight: 600; }
 
+        /* 所有文字一律置左 */
         .text-inner-scroll h1, .text-inner-scroll h2, .text-inner-scroll p, .text-inner-scroll ul { text-align: left; word-break: break-word; overflow-wrap: break-word; transition: color 0.5s; }
         .text-inner-scroll h1 { font-size: calc(clamp(2.8rem, 5cqw, 4rem) * var(--text-scale)); line-height: 1.2; font-weight: 500; color: var(--slide-text); margin-bottom: 0.5rem;}
         .text-inner-scroll h2 { font-size: calc(clamp(1.8rem, 3.1cqw, 2.5rem) * var(--text-scale)); font-weight: 400; color: var(--slide-muted); letter-spacing: 4px;}
         .text-inner-scroll p, .text-inner-scroll ul { font-size: calc(clamp(1.3rem, 2.25cqw, 1.8rem) * var(--text-scale)); line-height: 2.1; color: var(--slide-text); margin-top: 1rem; font-weight: 300; letter-spacing: 1px; opacity: 0.9;}
         .text-inner-scroll:not(:has(h1)):not(:has(h2)) p { margin-top: 0; margin-bottom: 0; }
 
-        /* 預覽編輯狀態 */
         .text-inner-scroll [contenteditable="true"] { outline: none; border-radius: 4px; padding: 0 4px; margin-left: -4px; transition: background 0.3s; }
         .text-inner-scroll [contenteditable="true"]:focus { background: var(--slide-edit-bg); cursor: text; }
 
-        .feature-img-wrapper { position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        /* 所有模式通用：圖片加上微透明與色彩修飾，預設半透明交疊 */
+        .feature-img-wrapper { 
+            position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; 
+            opacity: var(--feature-img-opacity); filter: contrast(1.05) saturate(0.85); transition: opacity 0.3s, transform 0.5s, filter 0.5s;
+        }
+        
         .art-frame { position: relative; padding: 0.8cqw; background: var(--slide-frame); border: 1px solid var(--slide-border); box-shadow: 0 15px 45px rgba(0,0,0,0.1); max-width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; transition: background 0.5s, border-color 0.5s;}
         .art-frame::before { content: ''; position: absolute; inset: 0.4cqw; border: 1px solid var(--slide-border-dark); opacity: 0.3; pointer-events: none; z-index: 5; transition: border-color 0.5s;}
         .art-frame img { display: block; width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: filter 0.3s, transform 0.3s; }
-        .art-frame:hover img { filter: brightness(0.85); transform: scale(0.995); }
+        .art-frame:not(.no-hover):hover img { filter: brightness(0.7); transform: scale(0.995); }
         .art-frame img.reloading { filter: blur(8px) grayscale(50%); transform: scale(0.98); pointer-events: none; }
 
-        /* 版式定義 */
-        .layout-img-left .feature-img-wrapper { grid-area: 2 / 1 / 12 / 6; } .layout-img-left .text-content-wrapper { grid-area: 3 / 6 / 11 / 13; }
-        .layout-img-right .text-content-wrapper { grid-area: 3 / 1 / 11 / 8; } .layout-img-right .feature-img-wrapper { grid-area: 2 / 8 / 12 / 13; }
-        .layout-overlap-left .feature-img-wrapper { grid-area: 1 / 4 / 13 / 13; } .layout-overlap-left .text-content-wrapper { grid-area: 4 / 1 / 10 / 7; z-index: 4; }
-        .layout-overlap-right .feature-img-wrapper { grid-area: 1 / 1 / 13 / 10; } .layout-overlap-right .text-content-wrapper { grid-area: 5 / 7 / 11 / 13; z-index: 4; }
+        /* 一般版式定義：加入微小錯位，避免死板平行 */
+        .layout-img-left .feature-img-wrapper { grid-area: 2 / 1 / 12 / 6; transform: translateY(4%); } 
+        .layout-img-left .text-content-wrapper { grid-area: 3 / 6 / 11 / 13; }
+        
+        .layout-img-right .text-content-wrapper { grid-area: 3 / 1 / 11 / 8; } 
+        .layout-img-right .feature-img-wrapper { grid-area: 2 / 8 / 12 / 13; transform: translateY(-4%); }
+        
+        .layout-overlap-left .feature-img-wrapper { grid-area: 1 / 4 / 13 / 13; transform: translateY(2%); -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,1) 45%); mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,1) 45%);} 
+        .layout-overlap-left .text-content-wrapper { grid-area: 4 / 1 / 10 / 7; z-index: 4; }
+        
+        .layout-overlap-right .feature-img-wrapper { grid-area: 1 / 1 / 13 / 10; transform: translateY(-2%); -webkit-mask-image: linear-gradient(to left, transparent 0%, rgba(0,0,0,1) 45%); mask-image: linear-gradient(to left, transparent 0%, rgba(0,0,0,1) 45%);} 
+        .layout-overlap-right .text-content-wrapper { grid-area: 5 / 7 / 11 / 13; z-index: 4; }
+        
         .layout-center .text-content-wrapper { grid-area: 3 / 2 / 11 / 12; align-items: flex-start; justify-content: center;} .layout-center .feature-img-wrapper { display: none; }
-        .layout-bottom-text .feature-img-wrapper { grid-area: 1 / 3 / 8 / 11; } .layout-bottom-text .text-content-wrapper { grid-area: 8 / 2 / 13 / 12; flex-direction: column; align-items: flex-start; justify-content: center; padding: 2cqw 4cqw;}
+        
+        .layout-bottom-text .feature-img-wrapper { grid-area: 1 / 3 / 8 / 11; transform: translateY(3%); } 
+        .layout-bottom-text .text-content-wrapper { grid-area: 8 / 2 / 13 / 12; flex-direction: column; align-items: flex-start; justify-content: center; padding: 2cqw 4cqw;}
         .layout-bottom-text .text-inner-scroll p { margin-top: 0; }
 
-        /* 修改：解決 Overlap 版式圖片過度搶奪文字視覺的問題 */
-        /* 利用 CSS 漸層遮罩讓圖片向文字方向柔和淡出，維持層次感且不影響其他佈局 */
-        .layout-overlap-left .feature-img-wrapper {
-            opacity: 0.95;
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,1) 45%);
-            mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,1) 45%);
+        /* =======================================================
+           抽象幾何裝飾模式 (模式 1 & 2 共用佈局)
+           ======================================================= */
+        body.use-geometric .slide .feature-img-wrapper {
+            filter: grayscale(30%) sepia(10%) contrast(1.1);
+            -webkit-mask-image: none !important; mask-image: none !important;
+            z-index: 2; 
         }
-        .layout-overlap-right .feature-img-wrapper {
-            opacity: 0.95;
-            -webkit-mask-image: linear-gradient(to left, transparent 0%, rgba(0,0,0,1) 45%);
-            mask-image: linear-gradient(to left, transparent 0%, rgba(0,0,0,1) 45%);
+        
+        /* 移除白色背景容器，讓邊緣完全貼合圖片圓角 */
+        body.use-geometric .slide .art-frame {
+            border: none; background: transparent; padding: 0; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15); 
+            width: 100%; height: 100%;
+            border-radius: var(--geo-shape, 0); 
         }
+        body.use-geometric .slide .art-frame::before { display: none; }
+        body.use-geometric .slide .art-frame img { 
+            object-fit: cover; width: 100%; height: 100%; 
+            border-radius: var(--geo-shape, 0); 
+        }
+
+        /* 文字板塊居中，但內部文字強制定置左對齊 */
+        body.use-geometric .slide .text-content-wrapper {
+            grid-area: 3 / 2 / 11 / 12 !important;
+            z-index: 10; background: var(--slide-glass);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.08); backdrop-filter: blur(20px);
+            align-items: flex-start; text-align: left;
+        }
+
+        /* 幾何模式各版式打散設定：強制加入 transform 位移，完美錯開文字框避免平行 */
+        body.use-geometric .layout-img-left .feature-img-wrapper { 
+            grid-area: 1 / 1 / 10 / 5 !important; 
+            transform: translate(-5%, 8%) !important; 
+            --geo-shape: 0 50vw 50vw 0; 
+        }
+        body.use-geometric .layout-img-right .feature-img-wrapper { 
+            grid-area: 4 / 9 / 13 / 13 !important; 
+            transform: translate(5%, -10%) !important; 
+            --geo-shape: 50vw 0 0 50vw; 
+        }
+        body.use-geometric .layout-overlap-left .feature-img-wrapper { 
+            grid-area: 6 / 2 / 12 / 6 !important; 
+            transform: translate(15%, 15%) !important; 
+            --geo-shape: 50%; 
+        }
+        body.use-geometric .layout-overlap-right .feature-img-wrapper { 
+            grid-area: 1 / 8 / 6 / 12 !important; 
+            transform: translate(-10%, -15%) !important; 
+            --geo-shape: 0 0 50vw 50vw; 
+        }
+        body.use-geometric .layout-bottom-text .feature-img-wrapper { 
+            grid-area: 1 / 6 / 8 / 10 !important; 
+            transform: translate(15%, -10%) !important; 
+            --geo-shape: 50vw 50vw 0 0; 
+        }
+        /* ======================================================= */
 
         .slide-number-indicator { position: absolute; bottom: 2cqw; right: 3cqw; font-size: 1.2cqw; font-family: 'Cinzel', serif; color: var(--slide-muted); letter-spacing: 0.2cqw; z-index: 5; pointer-events: none; transition: color 0.5s;}
 
@@ -233,7 +282,7 @@
         .btn-export:hover { border-color: var(--ui-text); background: var(--ui-text); color: var(--ui-surface); }
         
         .opacity-control { display: flex; align-items: center; gap: 8px; border-right: 1px solid var(--ui-border); padding-right: 15px; transition: border-color 0.5s;}
-        .opacity-control svg { width: 14px; height: 14px; color: var(--ui-icon); }
+        .opacity-control svg { width: 16px; height: 16px; color: var(--ui-icon); }
         input[type=range] { -webkit-appearance: none; width: 60px; background: transparent; cursor: pointer; }
         input[type=range]::-webkit-slider-runnable-track { height: 2px; background: var(--ui-border); border-radius: 2px; transition: background 0.5s; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: var(--ui-muted); margin-top: -4px; transition: 0.2s; }
@@ -248,24 +297,14 @@
         @keyframes slowSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulseText { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
-        /* --- 匯出進度極簡 UI --- */
         .export-loader-overlay {
-            position: fixed; inset: 0; z-index: 100000;
-            background: var(--ui-bg); backdrop-filter: blur(10px);
-            display: flex; justify-content: center; align-items: center;
+            position: fixed; inset: 0; z-index: 100000; background: var(--ui-bg); backdrop-filter: blur(10px); display: flex; justify-content: center; align-items: center;
             opacity: 0; visibility: hidden; transition: opacity 0.5s ease, visibility 0.5s;
         }
         .export-loader-overlay.active { opacity: 1; visibility: visible; }
-        .minimal-progress-track {
-            width: 25vw; min-width: 150px; max-width: 300px; height: 1px;
-            background: var(--ui-border); position: relative; overflow: hidden;
-        }
-        .minimal-progress-fill {
-            position: absolute; top: 0; left: 0; height: 100%; width: 0%;
-            background: var(--ui-text); transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
+        .minimal-progress-track { width: 25vw; min-width: 150px; max-width: 300px; height: 1px; background: var(--ui-border); position: relative; overflow: hidden; }
+        .minimal-progress-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: var(--ui-text); transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
 
-        /* UI UX 確認 Modal */
         .custom-modal-overlay { position: fixed; inset: 0; z-index: 10000; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: 0.3s ease; }
         .custom-modal-overlay.active { opacity: 1; visibility: visible; }
         .custom-modal-box { background: var(--ui-surface); padding: 2.5rem 2rem; width: 90%; max-width: 380px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); text-align: center; border: 1px solid var(--ui-border); transform: translateY(20px); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
@@ -297,102 +336,45 @@
             .mobile-back-btn { display: flex; } 
             .controls-container { bottom: 1rem; }
             .mix-options { margin-bottom: 1.5rem; }
+
+            /* 手機版保留幾何圖塊，讓它變成背景懸浮裝飾 */
+            body.use-geometric .slide .feature-img-wrapper { 
+                display: block !important; position: absolute;
+                width: 180px; height: 180px; z-index: 1;
+                grid-area: auto !important; transform: none !important;
+            }
+            body.use-geometric .slide .text-content-wrapper { position: relative; z-index: 5; padding: 2rem !important; }
+            body.use-geometric .layout-img-left .feature-img-wrapper { top: 5%; left: -30px; --geo-shape: 50%; }
+            body.use-geometric .layout-img-right .feature-img-wrapper { bottom: 5%; right: -30px; --geo-shape: 50%; }
+            body.use-geometric .layout-overlap-left .feature-img-wrapper { top: 40%; left: -50px; --geo-shape: 50%; }
+            body.use-geometric .layout-overlap-right .feature-img-wrapper { top: 20%; right: -50px; --geo-shape: 50%; }
+            body.use-geometric .layout-bottom-text .feature-img-wrapper { bottom: -30px; left: 50%; transform: translateX(-50%) !important; width: 250px; height: 100px; --geo-shape: 50vw 50vw 0 0; }
         }
 
-/* --- 版權宣告 --- */
-.copyright-footer {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    padding: 5px 10px;
-    background-color: var(--ui-bg); /* 改用全域變數，支援深/淺色主題無縫切換 */
-    color: var(--ui-muted); /* 字體顏色配合介面 */
-    border-top-left-radius: 4px; /* 增加一點精緻的圓角 */
-    border-top: 1px solid var(--ui-border);
-    border-left: 1px solid var(--ui-border);
-    z-index: 999; /* 確保不會被簡報或控制列遮蓋 */
-    transition: all 0.3s ease;
-}
+        .copyright-footer {
+            position: fixed; bottom: 0; left: 0; right: 0; padding: 6px 10px; text-align: center;
+            background-color: var(--ui-bg); color: var(--ui-muted); border-top: 1px solid var(--ui-border);
+            z-index: 999; transition: all 0.3s ease; box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
+        }
+        .copyright-footer p {
+            margin: 0; font-size: 11px; font-family: 'Cinzel', serif; letter-spacing: 0.8px; 
+            font-weight: 400; text-transform: uppercase; opacity: 0.6; white-space: nowrap; 
+            overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+        }
+        body.preview-mode .copyright-footer { opacity: 0; visibility: hidden; pointer-events: none; }
 
-/* --- 版權宣告（手機單行完整顯示優化版）--- */
-.copyright-footer p {
-    margin: 0;
-    font-size: 9.2px;                    /* 再調小，確保塞得下 */
-    font-family: 'Cinzel', serif;
-    letter-spacing: 0.8px;               /* 明顯縮小字距 */
-    font-weight: 400;
-    text-transform: uppercase;
-    opacity: 0.6;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;                     /* 確保不超出容器 */
-    padding: 0 4px;                      /* 左右留一點緩衝 */
-}
-
-/* === 手機版 COPYRIGHT 與 GENERATE 間距微調（已減半）=== */
-@media (max-width: 1024px) {
-    #generateBtn {
-        margin-bottom: 21px;        /* ← 從 42px 減半 */
-    }
-    
-    .sidebar {
-        padding-bottom: 65px;       /* ← 從 130px 減半 */
-    }
-    
-    .copyright-footer {
-        padding: 8px 12px 9px;
-        min-height: auto;
-        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.03);
-    }
-    
-    .copyright-footer p {
-        font-size: 8.8px;
-        letter-spacing: 0.8px;
-    }
-}
-
-/* 極小手機再微調 */
-@media (max-width: 600px) {
-    #generateBtn {
-        margin-bottom: 19px;        /* ← 同步減半 */
-    }
-    
-    .sidebar {
-        padding-bottom: 62px;
-    }
-    
-    .copyright-footer {
-        padding: 7px 10px 8px;
-    }
-    
-    .copyright-footer p {
-        font-size: 8.5px;
-    }
-}
-    /* 2. 在手機與平板上，將版權宣告改為底部滿版置中，看起來更和諧 */
-    .copyright-footer {
-        left: 0;
-        right: 0;
-        border-left: none;
-        border-radius: 0;
-        text-align: center;
-        padding: 6px 10px;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.03); /* 加一點極淡的陰影作為區隔 */
-    }
-    
-    .copyright-footer p {
-        font-size: 11px; /* 字體微調，更精緻 */
-    }
-
-    /* 3. UX 優化：進入簡報「預覽畫面」時自動隱藏版權列，確保不會擋到翻頁控制列 */
-    body.preview-mode .copyright-footer {
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-    }
-}
-        
+        @media (max-width: 1024px) {
+            #generateBtn { margin-bottom: 21px; }
+            .sidebar { padding-bottom: 65px; }
+            .copyright-footer { padding: 8px 12px 9px; box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.03); }
+            .copyright-footer p { font-size: 8.8px; letter-spacing: 0.8px; }
+        }
+        @media (max-width: 600px) {
+            #generateBtn { margin-bottom: 19px; }
+            .sidebar { padding-bottom: 62px; }
+            .copyright-footer { padding: 7px 10px 8px; }
+            .copyright-footer p { font-size: 8.5px; }
+        }
     </style>
 </head>
 <body>
@@ -433,7 +415,6 @@
             <button class="theme-btn btn-mix" data-theme="mix" title="混搭風格"></button>
         </div>
 
-        <!-- 修改：混搭子選單移除了生硬的 inline border-color -->
         <div class="mix-options" id="mixOptions">
             <div class="mix-toggle active" data-mix="classic" style="background: #ffffff;"></div>
             <div class="mix-toggle active" data-mix="midnight" style="background: #1e1e1e;"></div>
@@ -447,7 +428,30 @@
                 <svg viewBox="0 0 24 24"><path d="m9 11-6 6v3h9l3-3"></path><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path><path d="M3 21h18" stroke-width="2.5" class="hl-line"></path></svg>
             </div>
             <div class="icon-toggle" id="pageBreakBtn" title="插入強制分頁標記"><svg viewBox="0 0 24 24"><path d="M5 12h14M8 7l-3 5 3 5m8-10l3 5-3 5" stroke-width="2"></path></svg></div>
-            <div class="icon-toggle active-mode" id="titleToggle" style="display: flex;" title="開啟/關閉自動標題">
+            
+            <!-- 三種排版與圖片模式循環切換 -->
+            <div class="icon-toggle" id="layoutModeToggle" title="切換排版模式 (標準Bing / 幾何Bing / 幾何Picsum)">
+                <!-- Mode 0: Standard Bing -->
+                <svg id="icon-layout-std" viewBox="0 0 24 24" style="display: block;">
+                    <rect x="3" y="3" width="8" height="18" rx="1" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                    <rect x="13" y="3" width="8" height="8" rx="1" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                    <rect x="13" y="13" width="8" height="8" rx="1" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                </svg>
+                <!-- Mode 1: Geo Bing (加入高亮主色的點綴星芒，代表智慧關鍵字模式) -->
+                <svg id="icon-layout-geo-bing" viewBox="0 0 24 24" style="display: none;">
+                    <circle cx="9" cy="9" r="5" stroke="var(--ui-hl)" fill="none" stroke-width="1.5"></circle>
+                    <rect x="11" y="11" width="8" height="8" rx="4" stroke="currentColor" fill="none" stroke-width="1.5"></rect>
+                    <path d="M19 3v4M17 5h4" stroke="var(--ui-hl)" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <!-- Mode 2: Geo Picsum (純灰階線條代表純隨機) -->
+                <svg id="icon-layout-geo-pic" viewBox="0 0 24 24" style="display: none;">
+                    <circle cx="9" cy="9" r="5" stroke="currentColor" fill="none" stroke-width="1.5"></circle>
+                    <rect x="11" y="11" width="8" height="8" rx="4" stroke="currentColor" fill="none" stroke-width="1.5"></rect>
+                </svg>
+            </div>
+
+            <!-- 標題開關 (預設取消 active-mode，開啟才加上灰底) -->
+            <div class="icon-toggle" id="titleToggle" style="display: flex;" title="開啟/關閉自動標題">
                 <svg id="icon-title-on" viewBox="0 0 24 24" style="display: none;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="7" y1="8" x2="17" y2="8" stroke-width="2.5"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>
                 <svg id="icon-title-off" viewBox="0 0 24 24" style="display: block;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="7" y1="9" x2="17" y2="9"></line><line x1="7" y1="13" x2="17" y2="13"></line><line x1="7" y1="17" x2="13" y2="17"></line></svg>
             </div>
@@ -474,6 +478,11 @@
             <div class="opacity-control" title="調整背景濃度">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20v-20z" fill="currentColor" opacity="0.3"/></svg>
                 <input type="range" id="opacitySlider" min="0" max="100" value="20">
+            </div>
+            <!-- 主圖透明度調整控制 UI -->
+            <div class="opacity-control" title="調整主圖透明度">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <input type="range" id="imgOpacitySlider" min="10" max="100" value="75">
             </div>
             <button id="btnExportHtml" class="btn-export">HTML</button>
             <button id="btnExportPptx" class="btn-export">PPTX</button>
@@ -508,7 +517,10 @@
         const currentSlideNum = document.getElementById('currentSlideNum');
         const totalSlideNum = document.getElementById('totalSlideNum');
         const actionBar = document.getElementById('actionBar');
+        
         const opacitySlider = document.getElementById('opacitySlider');
+        const imgOpacitySlider = document.getElementById('imgOpacitySlider');
+        
         const pageBreakBtn = document.getElementById('pageBreakBtn');
         const loaderScreen = document.getElementById('fullscreenLoader');
         const loaderStageText = document.getElementById('loadingStageText');
@@ -521,6 +533,9 @@
         const btnCancelBack = document.getElementById('btnCancelBack');
         const btnConfirmBack = document.getElementById('btnConfirmBack');
 
+        // 0: 標準Bing, 1: 幾何Bing, 2: 幾何Picsum (依照修改後順序)
+        let currentLayoutMode = 0; 
+        
         let isAiMode = false, useTitleInStrict = false, isHighlightMode = false;
         let slides = [], currentIndex = 0;
         let globalMainKeyword = "藝術排版";
@@ -536,7 +551,6 @@
 
         const stopWords = new Set(["的","了","和","是","就","都","而","及","與","著","或","一個","沒有","我們","你們","他們","這個","那個","因為","所以","雖然","但是","如果","那麼","可以","就是","這","那","哪","啊","呢","嗎","吧","也","很","在","從","到","讓","被","對","會","能","要","去","有","把","給","什麼","怎麼","自己","開始","需要","進行","產生","使用","這種","那些","以及","為了","這樣","the","and","that","this","with","for","not","are","but","from","you","your","what","how"]);
 
-        // --- 主題切換與混搭邏輯 ---
         function updateSlideThemes() {
             if (slides.length === 0) return;
             if (currentThemeId === 'mix') {
@@ -574,9 +588,38 @@
         btnConfirmBack.addEventListener('click', () => { backModal.classList.remove('active'); document.body.classList.remove('preview-mode'); });
 
         opacitySlider.addEventListener('input', (e) => document.documentElement.style.setProperty('--bg-opacity', (0.02 + (e.target.value / 100) * 0.23).toFixed(3)));
+        
+        imgOpacitySlider.addEventListener('input', (e) => {
+            document.documentElement.style.setProperty('--feature-img-opacity', (e.target.value / 100).toFixed(2));
+        });
+        
         document.getElementById('modeToggle').addEventListener('click', function() { isAiMode = !isAiMode; document.getElementById('icon-magic').style.display = isAiMode ? "block" : "none"; document.getElementById('icon-lock').style.display = isAiMode ? "none" : "block"; isAiMode ? this.classList.add('active-mode') : this.classList.remove('active-mode'); });
-        document.getElementById('titleToggle').addEventListener('click', function() { useTitleInStrict = !useTitleInStrict; document.getElementById('icon-title-on').style.display = useTitleInStrict ? "block" : "none"; document.getElementById('icon-title-off').style.display = useTitleInStrict ? "none" : "block"; useTitleInStrict ? this.classList.remove('active-mode') : this.classList.add('active-mode'); });
+        
+        // 標題開關邏輯修正：開啟後才給 active-mode
+        document.getElementById('titleToggle').addEventListener('click', function() { 
+            useTitleInStrict = !useTitleInStrict; 
+            document.getElementById('icon-title-on').style.display = useTitleInStrict ? "block" : "none"; 
+            document.getElementById('icon-title-off').style.display = useTitleInStrict ? "none" : "block"; 
+            useTitleInStrict ? this.classList.add('active-mode') : this.classList.remove('active-mode'); 
+        });
+
         document.getElementById('highlightToggle').addEventListener('click', function() { isHighlightMode = !isHighlightMode; this.classList.toggle('active-mode', isHighlightMode); document.body.classList.toggle('show-highlight', isHighlightMode); });
+        
+        // 模式切換邏輯 (0: Std Bing -> 1: Geo Bing -> 2: Geo Picsum)
+        document.getElementById('layoutModeToggle').addEventListener('click', function() {
+            currentLayoutMode = (currentLayoutMode + 1) % 3;
+            
+            document.getElementById('icon-layout-std').style.display = currentLayoutMode === 0 ? 'block' : 'none';
+            document.getElementById('icon-layout-geo-bing').style.display = currentLayoutMode === 1 ? 'block' : 'none';
+            document.getElementById('icon-layout-geo-pic').style.display = currentLayoutMode === 2 ? 'block' : 'none';
+            
+            this.classList.toggle('active-mode', currentLayoutMode !== 0);
+            document.body.classList.toggle('use-geometric', currentLayoutMode !== 0);
+            
+            // 只有在純 Picsum 隨機模式 (2) 時隱藏關鍵字輸入
+            mainKeywordInput.parentElement.style.display = currentLayoutMode === 2 ? 'none' : 'block';
+            updateSlides();
+        });
 
         pageBreakBtn.addEventListener('mousedown', (e) => e.preventDefault());
         pageBreakBtn.addEventListener('click', () => {
@@ -622,7 +665,8 @@
 
         let manualRefreshIndex = 100; 
         function refreshImage(imgEl) {
-            if(imgEl.classList.contains('reloading')) return; imgEl.classList.add('reloading');
+            if(imgEl.classList.contains('reloading') || currentLayoutMode === 2) return; 
+            imgEl.classList.add('reloading');
             manualRefreshIndex++; let newSrc = getImageUrl(imgEl.getAttribute('data-main'), imgEl.getAttribute('data-sub'), manualRefreshIndex);
             let tempImg = new Image(); tempImg.crossOrigin = "anonymous";
             tempImg.onload = () => { imgEl.src = newSrc; imgEl.classList.remove('reloading'); };
@@ -630,7 +674,8 @@
         }
 
         function triggerCurrentSlideRefresh() {
-            if (slides.length === 0) return; let imgEl = slides[currentIndex].querySelector('.art-frame img');
+            if (slides.length === 0 || currentLayoutMode === 2) return; 
+            let imgEl = slides[currentIndex].querySelector('.art-frame img');
             if (imgEl) { imgEl.setAttribute('data-sub', subKeywordInput.value.trim()); refreshImage(imgEl); }
         }
         
@@ -691,13 +736,28 @@
                     } catch(e) {}
                 }
 
-                showLoader("正在加插圖片..."); await new Promise(r => setTimeout(r, 600));
-                renderPresentation(finalHtml); setTimeout(autoFitText, 100);
+                showLoader("正在加載圖片..."); 
+                renderPresentation(finalHtml);
+                
+                // 等待所有新生成的圖片(包含背景圖與主圖)載入完成才關閉 Loader
+                const newImages = Array.from(presentationBoard.querySelectorAll('img'));
+                await Promise.all(newImages.map(img => {
+                    if (img.complete) return Promise.resolve();
+                    return new Promise(resolve => {
+                        img.onload = resolve;
+                        img.onerror = resolve; // 若載入失敗也放行，避免卡死
+                    });
+                }));
 
+                setTimeout(autoFitText, 100);
                 if (window.innerWidth <= 1024) { document.body.classList.add('preview-mode'); }
 
-            } catch (error) { presentationBoard.innerHTML = `<div class="empty-state"><p>發生錯誤，請稍後再試</p></div>`; } 
-            finally { hideLoader(); generateBtn.disabled = false; }
+            } catch (error) { 
+                presentationBoard.innerHTML = `<div class="empty-state"><p>發生錯誤，請稍後再試</p></div>`; 
+            } finally { 
+                hideLoader(); 
+                generateBtn.disabled = false; 
+            }
         });
 
         const layouts = ['layout-img-right', 'layout-overlap-left', 'layout-center', 'layout-img-left', 'layout-bottom-text', 'layout-overlap-right'];
@@ -719,8 +779,7 @@
                     const el = slide.querySelector(tag); 
                     if(el) {
                         let cloned = el.cloneNode(true);
-                        cloned.contentEditable = "true";
-                        cloned.spellcheck = false;
+                        cloned.contentEditable = "true"; cloned.spellcheck = false;
                         cloned.addEventListener('input', () => autoFitText()); 
                         scrollArea.appendChild(cloned);
                     } 
@@ -731,24 +790,32 @@
                     const p = slide.querySelector('p'), imgWrapper = document.createElement('div'); imgWrapper.className = 'feature-img-wrapper';
                     const artFrame = document.createElement('div'); artFrame.className = 'art-frame';
                     const featureImg = document.createElement('img'); featureImg.crossOrigin = "anonymous";
-                    let initialSub = p && p.innerText ? extractKeywords(p.innerText) : "";
                     
-                    featureImg.src = getImageUrl(globalMainKeyword, initialSub, index);
-                    featureImg.setAttribute('data-main', globalMainKeyword); featureImg.setAttribute('data-sub', initialSub);
-                    
-                    featureImg.addEventListener('click', function() {
-                        if (this.classList.contains('reloading')) return; this.classList.add('reloading');
-                        let currentP = newSlide.querySelector('p');
-                        let slideText = currentP ? currentP.innerText : ""; 
-                        if (!slideText.trim()) { this.classList.remove('reloading'); return; }
+                    if (currentLayoutMode === 2) { // 模式 2: 幾何 Picsum
+                        featureImg.src = `https://picsum.photos/seed/${Math.floor(Math.random() * 99999)}/800/800`;
+                        artFrame.classList.add('no-hover'); 
+                    } else { // 模式 0 或 1: 使用 Bing 圖
+                        let initialSub = p && p.innerText ? extractKeywords(p.innerText) : "";
+                        featureImg.src = getImageUrl(globalMainKeyword, initialSub, index);
+                        featureImg.setAttribute('data-main', globalMainKeyword); 
+                        featureImg.setAttribute('data-sub', initialSub);
+                        
+                        featureImg.addEventListener('click', function() {
+                            if (this.classList.contains('reloading') || currentLayoutMode === 2) return; 
+                            this.classList.add('reloading');
+                            let currentP = newSlide.querySelector('p');
+                            let slideText = currentP ? currentP.innerText : ""; 
+                            if (!slideText.trim()) { this.classList.remove('reloading'); return; }
 
-                        let storageKey = `aura_slide_${index}_kws`, usedKws = JSON.parse(sessionStorage.getItem(storageKey) || "[]"), currentSub = this.getAttribute('data-sub');
-                        if (currentSub && !usedKws.includes(currentSub)) usedKws.push(currentSub);
-                        let potentialKws = getTopKeywords(slideText, 20), newSub = potentialKws.find(kw => !usedKws.includes(kw));
-                        if (!newSub && potentialKws.length > 0) { usedKws = [currentSub].filter(Boolean); newSub = potentialKws.find(kw => kw !== currentSub) || potentialKws[0]; }
-                        if (newSub) { usedKws.push(newSub); sessionStorage.setItem(storageKey, JSON.stringify(usedKws)); this.setAttribute('data-sub', newSub); if (slides[currentIndex] === newSlide) subKeywordInput.value = newSub; }
-                        this.classList.remove('reloading'); refreshImage(this);
-                    });
+                            let storageKey = `aura_slide_${index}_kws`, usedKws = JSON.parse(sessionStorage.getItem(storageKey) || "[]"), currentSub = this.getAttribute('data-sub');
+                            if (currentSub && !usedKws.includes(currentSub)) usedKws.push(currentSub);
+                            let potentialKws = getTopKeywords(slideText, 20), newSub = potentialKws.find(kw => !usedKws.includes(kw));
+                            if (!newSub && potentialKws.length > 0) { usedKws = [currentSub].filter(Boolean); newSub = potentialKws.find(kw => kw !== currentSub) || potentialKws[0]; }
+                            if (newSub) { usedKws.push(newSub); sessionStorage.setItem(storageKey, JSON.stringify(usedKws)); this.setAttribute('data-sub', newSub); if (slides[currentIndex] === newSlide) subKeywordInput.value = newSub; }
+                            this.classList.remove('reloading'); refreshImage(this);
+                        });
+                    }
+
                     artFrame.appendChild(featureImg); imgWrapper.appendChild(artFrame); newSlide.appendChild(imgWrapper);
                 }
                 const pageNum = document.createElement('div'); pageNum.className = 'slide-number-indicator'; pageNum.innerText = String(index + 1).padStart(2, '0');
@@ -764,9 +831,14 @@
 
         function updateSlides() { 
             slides.forEach((s, i) => s.classList.toggle('active', i === currentIndex)); currentSlideNum.innerText = currentIndex + 1; 
-            let img = slides[currentIndex].querySelector('.art-frame img');
-            if (img) { subKeywordGroup.style.display = 'flex'; subKeywordInput.value = img.getAttribute('data-sub') || ""; } 
-            else { subKeywordGroup.style.display = 'none'; subKeywordInput.value = ""; }
+            
+            if (currentLayoutMode === 2) { // 純 Picsum 模式隱藏關鍵字操作
+                subKeywordGroup.style.display = 'none';
+            } else {
+                let img = slides[currentIndex].querySelector('.art-frame img');
+                if (img) { subKeywordGroup.style.display = 'flex'; subKeywordInput.value = img.getAttribute('data-sub') || ""; } 
+                else { subKeywordGroup.style.display = 'none'; subKeywordInput.value = ""; }
+            }
         }
 
         prevBtn.addEventListener('click', () => { if (currentIndex > 0) { currentIndex--; updateSlides(); } });
@@ -780,22 +852,21 @@
             if (e.key === 'ArrowLeft' && currentIndex > 0) { currentIndex--; updateSlides(); } 
         });
 
-        // --- 匯出 HTML ---
+        // --- 匯出 HTML (包含自適應 16:9) ---
         document.getElementById('btnExportHtml').addEventListener('click', () => {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = Array.from(slides).map(s => s.outerHTML).join('\n');
             
-            // 清理互動與編輯屬性
             tempDiv.querySelectorAll('.art-frame img').forEach(img => { 
-                img.removeAttribute('title'); 
-                img.removeAttribute('data-main'); 
-                img.removeAttribute('data-sub'); 
-                img.style.cursor = 'default'; 
+                img.removeAttribute('title'); img.removeAttribute('data-main'); img.removeAttribute('data-sub'); img.style.cursor = 'default'; 
             });
             tempDiv.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
 
             const slideHtml = tempDiv.innerHTML;
-            const hlClass = isHighlightMode ? 'class="show-highlight"' : '';
+            let bodyClasses = [];
+            if(isHighlightMode) bodyClasses.push('show-highlight');
+            if(currentLayoutMode !== 0) bodyClasses.push('use-geometric');
+            const classAttr = bodyClasses.length > 0 ? `class="${bodyClasses.join(' ')}"` : '';
             
             const styles = Array.from(document.querySelectorAll('style')).map(s => s.innerHTML).join('\n');
             const wrapperThemeAttr = currentThemeId === 'mix' ? '' : `data-theme="${currentThemeId}"`;
@@ -809,72 +880,53 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Noto+Serif+TC:wght@300;400;500;600&family=Inter:wght@200;300;400&display=swap" rel="stylesheet">
     <style>
         ${styles} 
-        body { justify-content: center; align-items: center; background: #111; margin: 0; cursor: pointer; } 
-        .presentation-wrapper { 
-            width: 100vw; max-width: 1920px; aspect-ratio: 16/9; position: relative; 
-            container-type: inline-size; overflow: hidden; margin: 0 auto;
+        body { 
+            margin: 0; padding: 0; display: flex; 
+            justify-content: center; align-items: center; 
+            height: 100vh; background: #111; overflow: hidden; cursor: pointer;
         } 
-        
-        @media (max-width: 900px) { 
-            .presentation-wrapper { width: 100%; height: auto; aspect-ratio: auto; min-height: 100vh; display: block; overflow-y: auto;} 
-            .slide { position: relative; opacity: 1; display: none; grid-template-columns: 1fr; grid-template-rows: auto auto; padding: 2rem; height: 100vh; overflow-y: auto; } 
-            .slide.active { display: grid; } 
-            .layout-img-left .feature-img-wrapper, .layout-img-right .feature-img-wrapper, .layout-overlap-left .feature-img-wrapper, .layout-overlap-right .feature-img-wrapper, .layout-bottom-text .feature-img-wrapper { grid-area: auto; height: 40vh; margin-bottom: 1rem; } 
-            .layout-img-left .text-content-wrapper, .layout-img-right .text-content-wrapper, .layout-overlap-left .text-content-wrapper, .layout-overlap-right .text-content-wrapper, .layout-center .text-content-wrapper, .layout-bottom-text .text-content-wrapper { grid-area: auto; padding: 2rem; } 
-            .slide-number-indicator { display: none; } 
-            .text-inner-scroll { overflow: visible; } 
-            h1, h2, p { font-size: unset !important; } 
-            h1 { font-size: 2rem !important; } 
-            h2 { font-size: 1.5rem !important; } 
-            p { font-size: 1.1rem !important; } 
+        .presentation-wrapper { 
+            width: 100vw; height: 56.25vw; 
+            max-height: 100vh; max-width: 177.78vh; 
+            position: relative; container-type: inline-size; overflow: hidden; margin: auto; 
         }
+        .slide { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity 0.8s ease; }
+        .slide.active { opacity: 1; pointer-events: auto; }
     </style>
 </head>
-<body ${hlClass}>
+<body ${classAttr}>
     <div class="presentation-wrapper" id="board" ${wrapperThemeAttr}>
         ${slideHtml}
     </div>
     <script>
-        const slides = document.querySelectorAll('.slide'); 
-        let c = 0; 
+        const slides = document.querySelectorAll('.slide'); let c = 0; 
         function update() { slides.forEach((s, i) => s.classList.toggle('active', i === c)); } 
         if(slides.length > 0) update(); 
         
-        // 鍵盤左右鍵翻頁
         document.addEventListener('keydown', (e) => { 
             if(e.key === 'ArrowRight' && c < slides.length - 1) { c++; update(); } 
             if(e.key === 'ArrowLeft' && c > 0) { c--; update(); }
         }); 
 
-        // 點擊畫面左右側翻頁
         document.addEventListener('click', (e) => {
             if (window.getSelection().toString().length > 0) return; 
-            if (e.clientX < window.innerWidth / 2) {
-                if(c > 0) { c--; update(); }
-            } else {
-                if(c < slides.length - 1) { c++; update(); }
-            }
+            if (e.clientX < window.innerWidth / 2) { if(c > 0) { c--; update(); } } 
+            else { if(c < slides.length - 1) { c++; update(); } }
         });
         
         function autoFit() { 
-            if(window.innerWidth <= 900) return; 
             document.querySelectorAll('.text-inner-scroll').forEach(w => { 
                 let s = 1.0; w.style.setProperty('--text-scale', s); 
-                while (w.scrollHeight > w.clientHeight && s > 0.4) { 
-                    s -= 0.05; w.style.setProperty('--text-scale', s); 
-                } 
+                while (w.scrollHeight > w.clientHeight && s > 0.4) { s -= 0.05; w.style.setProperty('--text-scale', s); } 
             }); 
         } 
-        setTimeout(autoFit, 100); 
-        window.addEventListener('resize', autoFit);
+        setTimeout(autoFit, 100); window.addEventListener('resize', autoFit);
     <\/script>
 </body>
 </html>`;
 
-            const a = document.createElement('a'); 
-            a.href = URL.createObjectURL(new Blob([exportHtml], { type: 'text/html' })); 
-            a.download = 'AURA_Presentation.html'; 
-            a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportHtml], { type: 'text/html' })); 
+            a.download = 'AURA_Presentation.html'; a.click();
         });
 
         function parseHtmlToPptxTextRuns(htmlElement, defaultColor, hlColor, font) {
@@ -888,30 +940,23 @@
             return runs.length > 0 ? runs : [{ text: htmlElement.innerText, options: { color: defaultColor, fontFace: font } }];
         }
 
-        // --- 匯出 PPTX 加上極簡進度回饋 ---
+        // --- 匯出 PPTX ---
         document.getElementById('btnExportPptx').addEventListener('click', async () => {
             if(typeof PptxGenJS === 'undefined') { alert("PPT 引擎載入中，請稍後再試。"); return; }
             
-            // 呼叫全螢幕極簡進度條
             const exportLoader = document.getElementById('exportLoader');
             const progressFill = document.getElementById('exportProgressFill');
-            exportLoader.classList.add('active');
-            progressFill.style.width = '0%';
+            exportLoader.classList.add('active'); progressFill.style.width = '0%';
 
-            // 模擬順滑的預備進度
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += (85 - progress) * 0.08; 
-                progressFill.style.width = `${progress}%`;
-            }, 150);
-
-            // 放棄執行緒短暫時間，讓 DOM 得以渲染出 Loader 畫面
+            let progress = 0; const progressInterval = setInterval(() => { progress += (85 - progress) * 0.08; progressFill.style.width = `${progress}%`; }, 150);
             await new Promise(r => setTimeout(r, 400));
 
             try {
                 let pres = new PptxGenJS(); pres.layout = 'LAYOUT_16x9';
                 const font = 'Noto Serif TC';
-                const pptxTransparency = 100 - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bg-opacity').trim()) * 100);
+                const pptxBgTransparency = 100 - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bg-opacity').trim()) * 100);
+                const pptxImgOpacity = 100 - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--feature-img-opacity').trim()) * 100);
+                const isGeometricLayout = currentLayoutMode !== 0;
 
                 slides.forEach((slide, index) => {
                     let pptSlide = pres.addSlide();
@@ -920,22 +965,31 @@
                     if (slideThemeId === 'mix') slideThemeId = 'classic';
                     const cTheme = themePptxColors[slideThemeId];
 
-                    pptSlide.bkgd = cTheme.bg; 
-                    pptSlide.transition = { type: 'fade', speed: 'med' };
+                    pptSlide.bkgd = cTheme.bg; pptSlide.transition = { type: 'fade', speed: 'med' };
 
                     let bgImg = slide.querySelector('.bg-img');
-                    if (bgImg) pptSlide.addImage({ path: bgImg.src, x: 0, y: 0, w: '100%', h: '100%', transparency: pptxTransparency }); 
+                    if (bgImg) pptSlide.addImage({ path: bgImg.src, x: 0, y: 0, w: '100%', h: '100%', transparency: pptxBgTransparency }); 
                     
                     let cList = slide.classList;
                     let boxX=0, boxY=0, boxW=0, boxH=0, imgX=0, imgY=0, imgW=0, imgH=0, hasImg = !cList.contains('layout-center');
+                    let pShape = pres.ShapeType.rect;
                     
-                    // 預設佈局尺寸設定
-                    if (cList.contains('layout-img-left')) { imgX=0.5; imgY=0.6; imgW=3.5; imgH=4.4; boxX=4.5; boxY=1.0; boxW=5.0; boxH=3.6; } 
-                    else if (cList.contains('layout-img-right')) { boxX=0.5; boxY=1.0; boxW=5.0; boxH=3.6; imgX=6.0; imgY=0.6; imgW=3.5; imgH=4.4; } 
-                    else if (cList.contains('layout-overlap-left')) { imgX=2.8; imgY=0.3; imgW=6.9; imgH=5.0; boxX=0.5; boxY=1.5; boxW=4.5; boxH=2.6; } 
-                    else if (cList.contains('layout-overlap-right')) { imgX=0.3; imgY=0.3; imgW=6.9; imgH=5.0; boxX=5.0; boxY=2.0; boxW=4.5; boxH=2.6; } 
-                    else if (cList.contains('layout-bottom-text')) { imgX=2.0; imgY=0.3; imgW=6.0; imgH=3.2; boxX=1.0; boxY=3.8; boxW=8.0; boxH=1.5; } 
-                    else if (cList.contains('layout-center')) { boxX=2.0; boxY=1.5; boxW=6.0; boxH=2.6; } 
+                    if (isGeometricLayout) {
+                        boxX = 1.0; boxY = 1.5; boxW = 8.0; boxH = 2.6; // 文字居中版塊
+                        pShape = pres.ShapeType.oval;
+                        if (cList.contains('layout-img-left')) { imgX = -1.0; imgY = 0.5; imgW = 4.0; imgH = 4.5; pShape = pres.ShapeType.roundRect; }
+                        else if (cList.contains('layout-img-right')) { imgX = 7.0; imgY = 2.0; imgW = 4.5; imgH = 4.5; pShape = pres.ShapeType.roundRect; }
+                        else if (cList.contains('layout-overlap-left')) { imgX = 0.8; imgY = 2.8; imgW = 3.0; imgH = 3.0; pShape = pres.ShapeType.oval; }
+                        else if (cList.contains('layout-overlap-right')) { imgX = 6.0; imgY = -0.5; imgW = 4.5; imgH = 2.5; pShape = pres.ShapeType.roundRect; }
+                        else if (cList.contains('layout-bottom-text')) { imgX = 3.5; imgY = 4.0; imgW = 4.0; imgH = 2.0; pShape = pres.ShapeType.roundRect; }
+                    } else {
+                        if (cList.contains('layout-img-left')) { imgX=0.5; imgY=0.6; imgW=3.5; imgH=4.4; boxX=4.5; boxY=1.0; boxW=5.0; boxH=3.6; } 
+                        else if (cList.contains('layout-img-right')) { boxX=0.5; boxY=1.0; boxW=5.0; boxH=3.6; imgX=6.0; imgY=0.6; imgW=3.5; imgH=4.4; } 
+                        else if (cList.contains('layout-overlap-left')) { imgX=2.8; imgY=0.3; imgW=6.9; imgH=5.0; boxX=0.5; boxY=1.5; boxW=4.5; boxH=2.6; } 
+                        else if (cList.contains('layout-overlap-right')) { imgX=0.3; imgY=0.3; imgW=6.9; imgH=5.0; boxX=5.0; boxY=2.0; boxW=4.5; boxH=2.6; } 
+                        else if (cList.contains('layout-bottom-text')) { imgX=2.0; imgY=0.3; imgW=6.0; imgH=3.2; boxX=1.0; boxY=3.8; boxW=8.0; boxH=1.5; } 
+                        else if (cList.contains('layout-center')) { boxX=2.0; boxY=1.5; boxW=6.0; boxH=2.6; } 
+                    }
 
                     let h1 = slide.querySelector('h1'), h2 = slide.querySelector('h2'), p = slide.querySelector('p');
 
@@ -949,32 +1003,35 @@
                         if (charsPerLine < 10) charsPerLine = 10;
                         let explicitLines = (pText.match(/\n/g) || []).length;
                         let estimatedLines = Math.ceil(pText.length / charsPerLine) + explicitLines;
-                        let requiredPHeight = estimatedLines * 0.35; 
-                        totalReqH += requiredPHeight;
+                        totalReqH += (estimatedLines * 0.35);
                     }
 
                     let defaultBoxH = boxH;
-
                     if (totalReqH > defaultBoxH) {
-                        let heightDiff = totalReqH - defaultBoxH;
-                        boxH = totalReqH;
-                        if (cList.contains('layout-bottom-text')) boxY -= heightDiff;
-                        else boxY -= (heightDiff / 2);
+                        let heightDiff = totalReqH - defaultBoxH; boxH = totalReqH;
+                        if (!isGeometricLayout && cList.contains('layout-bottom-text')) boxY -= heightDiff; else boxY -= (heightDiff / 2);
                         if (boxY < 0.2) boxY = 0.2;
                         if (boxY + boxH > 5.4) boxH = 5.4 - boxY;
                     } else if (totalReqH < defaultBoxH) {
-                        let newBoxH = Math.max(totalReqH, 1.5); 
-                        let heightDiff = defaultBoxH - newBoxH;
-                        boxH = newBoxH;
-                        if (cList.contains('layout-bottom-text')) boxY += heightDiff;
-                        else boxY += (heightDiff / 2);
+                        let newBoxH = Math.max(totalReqH, 1.5); let heightDiff = defaultBoxH - newBoxH; boxH = newBoxH;
+                        if (!isGeometricLayout && cList.contains('layout-bottom-text')) boxY += heightDiff; else boxY += (heightDiff / 2);
                     }
 
-                    // 畫配圖
+                    // 畫配圖 (底圖層)
                     if (hasImg) {
-                        pptSlide.addShape(pres.ShapeType.rect, { x: imgX, y: imgY, w: imgW, h: imgH, fill: { color: cTheme.shapeFill }, shadow: { type: 'outer', opacity: 0.15, blur: 5 }});
+                        if (!isGeometricLayout) pptSlide.addShape(pres.ShapeType.rect, { x: imgX, y: imgY, w: imgW, h: imgH, fill: { color: cTheme.shapeFill }, shadow: { type: 'outer', opacity: 0.15, blur: 5 }});
                         let featureImg = slide.querySelector('.feature-img-wrapper img');
-                        if (featureImg) try { pptSlide.addImage({ path: featureImg.src, x: imgX+0.1, y: imgY+0.1, sizing: { type: 'cover', w: imgW-0.2, h: imgH-0.2 } }); } catch(e){}
+                        if (featureImg) {
+                            try { 
+                                pptSlide.addImage({ 
+                                    path: featureImg.src, 
+                                    x: isGeometricLayout ? imgX : imgX+0.1, y: isGeometricLayout ? imgY : imgY+0.1, 
+                                    sizing: { type: 'cover', w: isGeometricLayout ? imgW : imgW-0.2, h: isGeometricLayout ? imgH : imgH-0.2 },
+                                    transparency: pptxImgOpacity,
+                                    shape: pShape
+                                }); 
+                            } catch(e){}
+                        }
                     }
 
                     // 畫文字底框與四角裝飾線
@@ -985,56 +1042,27 @@
                     pptSlide.addShape(pres.ShapeType.line, { x: boxX+boxW-0.15-cLen, y: boxY+boxH-0.15, w: cLen, h: 0, line: { color: cTheme.line, width: 1.5 } }); 
                     pptSlide.addShape(pres.ShapeType.line, { x: boxX+boxW-0.15, y: boxY+boxH-0.15-cLen, w: 0, h: cLen, line: { color: cTheme.line, width: 1.5 } }); 
 
-                    // 寫入文字
+                    // 寫入文字：全部強制置左 (align: 'left')
                     let curY = boxY + 0.35, txtW = boxW - 0.7, txtX = boxX + 0.35;
                     
-                    if(h1) { 
-                        pptSlide.addText(h1.innerText, { x: txtX, y: curY, w: txtW, h: 0.6, align: 'left', fontFace: font, fontSize: 32, color: cTheme.textMain, fit: 'shrink' }); 
-                        curY += 0.65; 
-                    }
-                    if(h2) { 
-                        pptSlide.addText(h2.innerText, { x: txtX, y: curY, w: txtW, h: 0.4, align: 'left', fontFace: font, fontSize: 20, color: cTheme.textMuted, fit: 'shrink' }); 
-                        curY += 0.45; 
-                    }
+                    if(h1) { pptSlide.addText(h1.innerText, { x: txtX, y: curY, w: txtW, h: 0.6, align: 'left', fontFace: font, fontSize: 32, color: cTheme.textMain, fit: 'shrink' }); curY += 0.65; }
+                    if(h2) { pptSlide.addText(h2.innerText, { x: txtX, y: curY, w: txtW, h: 0.4, align: 'left', fontFace: font, fontSize: 20, color: cTheme.textMuted, fit: 'shrink' }); curY += 0.45; }
                     if(p) { 
                         let textRuns = parseHtmlToPptxTextRuns(p, cTheme.textMain, cTheme.hl, font);
-                        let finalPHeight = (boxY + boxH) - curY - 0.35; 
-                        if(finalPHeight < 0.5) finalPHeight = 0.5;
+                        let finalPHeight = (boxY + boxH) - curY - 0.35; if(finalPHeight < 0.5) finalPHeight = 0.5;
                         pptSlide.addText(textRuns, { x: txtX, y: curY, w: txtW, h: finalPHeight, align: 'left', valign: 'top', fontFace: font, fontSize: 16, lineSpacing: 25, fit: 'shrink', wrap: true }); 
                     }
 
                     pptSlide.slideNumber = { x: 9.0, y: 5.1, w: 0.8, h: 0.4, align: 'right', fontFace: 'Cinzel', fontSize: 16, color: cTheme.textMuted };
                 });
 
-                // 異步等待匯出完成
                 await pres.writeFile({ fileName: "AURA_Presentation.pptx" });
+                clearInterval(progressInterval); progressFill.style.width = '100%';
+                setTimeout(() => { exportLoader.classList.remove('active'); setTimeout(() => { progressFill.style.width = '0%'; }, 500); }, 600);
 
-                // 成功後將進度條推滿並關閉視窗
-                clearInterval(progressInterval);
-                progressFill.style.width = '100%';
-                
-                setTimeout(() => {
-                    exportLoader.classList.remove('active');
-                    // 視窗消失後再把進度條歸零備用
-                    setTimeout(() => { progressFill.style.width = '0%'; }, 500);
-                }, 600);
-
-            } catch(err) {
-                console.error(err);
-                clearInterval(progressInterval);
-                exportLoader.classList.remove('active');
-                alert("匯出過程發生錯誤，請稍後重試。");
-            }
+            } catch(err) { console.error(err); clearInterval(progressInterval); exportLoader.classList.remove('active'); alert("匯出過程發生錯誤，請稍後重試。"); }
         });
     </script>
-<!-- 加入版權宣告 -->
-    <footer class="copyright-footer">
-       <p>© 2026 AURA • Chan Kwun Kin. All rights reserved.</p>
-    </footer>
-
-</body>
-</html>
-
-    
+    <footer class="copyright-footer"><p>© 2026 AURA • Chan Kwun Kin. All rights reserved.</p></footer>
 </body>
 </html>
