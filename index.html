@@ -170,8 +170,9 @@
 
         /* 一般版式 */
         .feature-img-wrapper { 
-            position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; 
+            position: relative; z-index: 20; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; 
             opacity: var(--feature-img-opacity); filter: contrast(1.05) saturate(0.85); transition: opacity 0.3s, transform 0.5s, filter 0.5s;
+            pointer-events: auto; /* 強制影像區域可被點擊 */
         }
         
         .art-frame { position: relative; padding: 0.8cqw; background: var(--slide-frame); border: 1px solid var(--slide-border); box-shadow: 0 15px 45px rgba(0,0,0,0.1); max-width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; transition: background 0.5s, border-color 0.5s;}
@@ -204,7 +205,7 @@
         body.use-geometric .slide .feature-img-wrapper {
             filter: grayscale(30%) sepia(10%) contrast(1.1);
             -webkit-mask-image: none !important; mask-image: none !important;
-            z-index: 2; 
+            z-index: 20; 
         }
         
         body.use-geometric .slide .art-frame {
@@ -263,9 +264,11 @@
         .empty-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; opacity: 0.15; transition: opacity 0.5s;}
         .empty-state svg { width: 100px; height: 100px; stroke: var(--ui-text); stroke-width: 0.5; fill: none; animation: breathe 4s infinite ease-in-out; }
         
-        .action-bar { position: absolute; top: 2rem; right: 2.5rem; display: flex; align-items: center; gap: 15px; z-index: 20;}
+        /* --- 全新 ActionBar 佈局設定 (解決電腦/手機並排問題) --- */
+        .action-bar { position: absolute; top: 2rem; right: 2.5rem; display: flex; align-items: center; gap: 15px; z-index: 20; }
+        .ab-row { display: flex; align-items: center; gap: 15px; }
 
-        .sub-keyword-group { display: flex; align-items: center; border-bottom: 1px solid var(--ui-border); margin-right: 10px; padding-bottom: 2px; transition: 0.3s; }
+        .sub-keyword-group { display: flex; align-items: center; border-bottom: 1px solid var(--ui-border); padding-bottom: 2px; transition: 0.3s; }
         .sub-keyword-group:focus-within { border-bottom-color: var(--ui-text); }
         .sub-keyword-group input { border: none; background: transparent; outline: none; font-family: 'Noto Serif TC', serif; font-size: 0.85rem; color: var(--ui-text); width: 150px; }
         .sub-keyword-group input::placeholder { color: var(--ui-muted); font-family: 'Inter', sans-serif; letter-spacing: 0.5px; opacity:0.6;}
@@ -275,7 +278,6 @@
         .btn-export { background: transparent; border: 1px solid var(--ui-border); padding: 6px 12px; font-size: 0.75rem; font-family: 'Cinzel', serif; letter-spacing: 2px; cursor: pointer; transition: 0.2s; color: var(--ui-text); border-radius: 4px; }
         .btn-export:hover { border-color: var(--ui-text); background: var(--ui-text); color: var(--ui-surface); }
         
-        .sliders-wrapper { display: flex; align-items: center; gap: 15px; }
         .opacity-control { display: flex; align-items: center; gap: 8px; border-right: 1px solid var(--ui-border); padding-right: 15px; transition: border-color 0.5s;}
         .opacity-control svg { width: 16px; height: 16px; color: var(--ui-icon); }
         input[type=range] { -webkit-appearance: none; width: 60px; background: transparent; cursor: pointer; }
@@ -313,7 +315,7 @@
         .custom-modal-btn-confirm { background: var(--ui-text); color: var(--ui-surface); border: 1px solid var(--ui-text); }
         .custom-modal-btn-confirm:hover { background: transparent; color: var(--ui-text); }
 
-        /* 手機版樣式與佈局修正 */
+        /* 手機版樣式與完美上下行對齊 */
         @media (max-width: 1024px) {
             body { flex-direction: column; height: 100dvh; overflow: hidden; }
             .sidebar { width: 100%; height: 100dvh; max-height: 100dvh; padding: 2rem; border-right: none; overflow-y: auto; flex: none; transition: transform 0.4s cubic-bezier(0.25,0.8,0.25,1); }
@@ -329,21 +331,26 @@
 
             .presentation-wrapper { width: 100%; max-width: 100%; }
             
-            /* 行動版選單換行調整 */
-            .action-bar { top: 1rem; left: 1rem; right: 1rem; flex-wrap: wrap; gap: 10px; justify-content: flex-start; align-items: center; }
+            /* 將 ActionBar 在手機版拆解為兩行 (Row1: 返回與關鍵字 / Row2: 匯出鈕與雙控制條) */
+            .action-bar { top: 1rem; left: 1rem; right: 1rem; flex-direction: column; align-items: stretch; gap: 10px; }
+            .ab-row { width: 100%; gap: 8px; }
+            .ab-row.bottom-row { justify-content: space-between; overflow-x: auto; padding-bottom: 2px; }
+            
             .mobile-back-btn { display: flex; margin-right: 5px; flex-shrink: 0; } 
-            .sub-keyword-group { flex-grow: 1; min-width: 140px; margin-right: 0; }
-            .btn-export { flex-shrink: 0; }
-            /* 強制透明度控制 Bar 換行 */
-            .sliders-wrapper { flex-basis: 100%; display: flex; justify-content: flex-end; gap: 15px; padding-top: 10px; margin-top: 5px; border-top: 1px solid var(--ui-border); }
-            .opacity-control { border-right: none; padding-right: 0; }
+            .sub-keyword-group { flex: 1; min-width: 120px; }
+            .sub-keyword-group input { width: 100%; }
+            
+            .btn-export { padding: 4px 6px; font-size: 0.7rem; flex-shrink: 0; letter-spacing: 1px; }
+            .opacity-control { padding-right: 0; border-right: none; gap: 4px; flex-shrink: 0; }
+            .opacity-control svg { width: 15px; height: 15px; }
+            input[type=range] { width: 45px; }
 
             .controls-container { bottom: 1rem; }
             .mix-options { margin-bottom: 1.5rem; }
 
             body.use-geometric .slide .feature-img-wrapper { 
                 display: block !important; position: absolute;
-                width: 180px; height: 180px; z-index: 1;
+                width: 180px; height: 180px; z-index: 20; /* 確保幾何模式的圖片置頂可被點擊 */
                 grid-area: auto !important; transform: none !important;
             }
             body.use-geometric .slide .text-content-wrapper { position: relative; z-index: 5; padding: 2rem !important; }
@@ -449,18 +456,21 @@
     </div>
 
     <div class="main-content">
+        <!-- 將 ActionBar 拆解為 Row-1 與 Row-2 的精確佈局 -->
         <div class="action-bar" id="actionBar" style="display: none;">
-            <button class="icon-btn mobile-back-btn" id="mobileBackBtn" title="返回編輯器">
-                <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12" stroke-width="2"></line><polyline points="12 19 5 12 12 5" stroke-width="2"></polyline></svg>
-            </button>
-            <div class="sub-keyword-group" id="subKeywordGroup" title="自訂此頁子關鍵詞並重整圖片">
-                <input type="text" id="subKeywordInput" placeholder="子關鍵詞">
-                <button class="btn-refresh-img" id="btnRefreshImg" title="依此關鍵詞重新生成"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 1 0 2.63-6.37L21 8"></path></svg></button>
+            <div class="ab-row top-row">
+                <button class="icon-btn mobile-back-btn" id="mobileBackBtn" title="返回編輯器">
+                    <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12" stroke-width="2"></line><polyline points="12 19 5 12 12 5" stroke-width="2"></polyline></svg>
+                </button>
+                <div class="sub-keyword-group" id="subKeywordGroup" title="自訂此頁子關鍵詞並重整圖片">
+                    <input type="text" id="subKeywordInput" placeholder="子關鍵詞">
+                    <button class="btn-refresh-img" id="btnRefreshImg" title="依此關鍵詞重新生成"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 1 0 2.63-6.37L21 8"></path></svg></button>
+                </div>
             </div>
-            <button id="btnExportHtml" class="btn-export">HTML</button>
-            <button id="btnExportPptx" class="btn-export">PPTX</button>
             
-            <div class="sliders-wrapper">
+            <div class="ab-row bottom-row">
+                <button id="btnExportHtml" class="btn-export">HTML</button>
+                <button id="btnExportPptx" class="btn-export">PPTX</button>
                 <div class="opacity-control" title="調整背景濃度">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20v-20z" fill="currentColor" opacity="0.3"/></svg>
                     <input type="range" id="opacitySlider" min="0" max="100" value="20">
@@ -620,11 +630,15 @@
             if (!text) return []; let cleanText = text.replace(/[0-9０-９]/g, '');
             const isDatePattern = (str) => /^[一二三四五六七八九十百千萬億兆零〇年月日號]+$/.test(str) && /[年月日號]/.test(str);
             let words = [];
+            
+            // 強大的分詞回退機制，確保任何裝置都能抓出詞彙
             if (typeof Intl.Segmenter === 'function') {
                 const segmenter = new Intl.Segmenter(['zh-TW', 'en'], { granularity: 'word' });
                 words = [...segmenter.segment(cleanText)].filter(s => s.isWordLike).map(s => s.segment.trim()).filter(w => !stopWords.has(w.toLowerCase()) && !isDatePattern(w) && w.length >= 2);
             } else {
-                let enWords = cleanText.match(/[a-zA-Z]{2,}/g) || []; let chText = cleanText.replace(/[^\u4e00-\u9fa5]/g, ''); let chWords = [];
+                let enWords = cleanText.match(/[a-zA-Z]{2,}/g) || []; 
+                let chText = cleanText.replace(/[^\u4e00-\u9fa5]/g, ''); 
+                let chWords = [];
                 for (let i = 0; i < chText.length - 1; i++) chWords.push(chText.substring(i, i + 2));
                 words = [...enWords, ...chWords].filter(w => !stopWords.has(w.toLowerCase()) && !isDatePattern(w));
             }
@@ -652,10 +666,10 @@
             let imgEl = slides[currentIndex].querySelector('.art-frame img');
             if (imgEl) { 
                 let inputVal = subKeywordInput.value.trim();
-                // 如果使用者沒有輸入任何文字，卻按了更新按鈕，幫他自動產生下一個可用的關鍵字！
                 if (!inputVal) {
-                    let currentP = slides[currentIndex].querySelector('p');
-                    let slideText = currentP ? currentP.textContent : ""; 
+                    // 同樣套用終極文字抓取法
+                    let textContainer = slides[currentIndex].querySelector('.text-inner-scroll');
+                    let slideText = textContainer ? textContainer.textContent : ""; 
                     let storageKey = `aura_slide_${currentIndex}_kws`;
                     let usedKws = JSON.parse(sessionStorage.getItem(storageKey) || "[]");
                     let potentialKws = getTopKeywords(slideText, 20);
@@ -776,8 +790,7 @@
                 textWrapper.appendChild(scrollArea); newSlide.appendChild(textWrapper);
 
                 if (assignedLayout !== 'layout-center') {
-                    // 【關鍵修正】這裡必須使用 textContent 而非 innerText，確保在 DOM 尚未附加前能正確抓出內容
-                    const p = slide.querySelector('p'), imgWrapper = document.createElement('div'); imgWrapper.className = 'feature-img-wrapper';
+                    const imgWrapper = document.createElement('div'); imgWrapper.className = 'feature-img-wrapper';
                     const artFrame = document.createElement('div'); artFrame.className = 'art-frame';
                     const featureImg = document.createElement('img'); featureImg.crossOrigin = "anonymous";
                     
@@ -785,7 +798,10 @@
                         featureImg.src = `https://picsum.photos/seed/${Math.floor(Math.random() * 99999)}/800/800`;
                         artFrame.classList.add('no-hover'); 
                     } else { 
-                        let initialSub = p && p.textContent ? extractKeywords(p.textContent) : "";
+                        // 【終極解法】讀取整頁內容，徹底無視 AI 是否忘記包裹 <p> 標籤！
+                        let slideTextForKw = slide.textContent || ""; 
+                        let initialSub = slideTextForKw.trim() ? extractKeywords(slideTextForKw) : "";
+                        
                         featureImg.src = getImageUrl(globalMainKeyword, initialSub, index);
                         featureImg.setAttribute('data-main', globalMainKeyword); 
                         featureImg.setAttribute('data-sub', initialSub);
@@ -793,17 +809,28 @@
                         featureImg.addEventListener('click', function() {
                             if (this.classList.contains('reloading') || currentLayoutMode === 2) return; 
                             this.classList.add('reloading');
-                            let currentP = newSlide.querySelector('p');
-                            // 【關鍵修正】這裡同樣修正為 textContent
-                            let slideText = currentP ? currentP.textContent : ""; 
+                            
+                            // 同樣使用終極抓取法：不依賴任何特定標籤
+                            let textContainer = newSlide.querySelector('.text-inner-scroll');
+                            let slideText = textContainer ? textContainer.textContent : ""; 
+                            
+                            // 當前畫面確實沒有半點文字，才中止重整
                             if (!slideText.trim()) { this.classList.remove('reloading'); return; }
 
                             let storageKey = `aura_slide_${index}_kws`, usedKws = JSON.parse(sessionStorage.getItem(storageKey) || "[]"), currentSub = this.getAttribute('data-sub');
                             if (currentSub && !usedKws.includes(currentSub)) usedKws.push(currentSub);
+                            
                             let potentialKws = getTopKeywords(slideText, 20), newSub = potentialKws.find(kw => !usedKws.includes(kw));
                             if (!newSub && potentialKws.length > 0) { usedKws = [currentSub].filter(Boolean); newSub = potentialKws.find(kw => kw !== currentSub) || potentialKws[0]; }
-                            if (newSub) { usedKws.push(newSub); sessionStorage.setItem(storageKey, JSON.stringify(usedKws)); this.setAttribute('data-sub', newSub); if (slides[currentIndex] === newSlide) subKeywordInput.value = newSub; }
-                            this.classList.remove('reloading'); refreshImage(this);
+                            
+                            if (newSub) { 
+                                usedKws.push(newSub); 
+                                sessionStorage.setItem(storageKey, JSON.stringify(usedKws)); 
+                                this.setAttribute('data-sub', newSub); 
+                                if (slides[currentIndex] === newSlide) subKeywordInput.value = newSub; 
+                            }
+                            this.classList.remove('reloading'); 
+                            refreshImage(this);
                         });
                     }
 
