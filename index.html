@@ -85,7 +85,6 @@
             background: linear-gradient(135deg, var(--c1) 50%, var(--c2) 50%);
             box-shadow: 0 2px 5px rgba(0,0,0,0.15); transition: transform 0.3s, box-shadow 0.3s; position: relative;
         }
-        /* 混搭風格圖示顏色等分為五大主題 */
         .theme-btn.btn-mix {
             background: conic-gradient(#ffffff 0 72deg, #121212 72deg 144deg, #e4dccc 144deg 216deg, #0b132b 216deg 288deg, #8c9b90 288deg 360deg);
         }
@@ -149,7 +148,6 @@
             background: var(--slide-glass); backdrop-filter: blur(15px);
             border: 1px solid var(--slide-border); padding: 3cqw 3.5cqw;
             box-shadow: 0 15px 40px rgba(0,0,0,0.06); border-radius: 2px; transition: background 0.5s, border-color 0.5s;
-            /* 自動收縮高度並置中 */
             height: fit-content; 
             max-height: 100%;
             align-self: center;
@@ -474,9 +472,11 @@
             return Object.keys(frequency).sort((a, b) => frequency[b] - frequency[a]).slice(0, count).map(lw => words.find(w => w.toLowerCase() === lw)).filter(Boolean);
         }
 
+        // --- 修正圖片畫質問題 ---
+        // 重新加入 c=7 與 rs=1 強制裁切，並提高解析度至 1600 加上 qlt=100 (無損高畫質)
         function getImageUrl(mainKw, subKw, index) {
             let baseQuery = mainKw || "設計"; if (subKw && !baseQuery.includes(subKw)) baseQuery = `${baseQuery} ${subKw}`;
-            return `https://tse${(index % 4) + 1}.mm.bing.net/th?q=${encodeURIComponent(baseQuery.trim())}&w=1200&h=1200&c=7&rs=1&pid=Api&mkt=zh-TW&nocache=${Date.now() + index}`;
+            return `https://tse${(index % 4) + 1}.mm.bing.net/th?q=${encodeURIComponent(baseQuery.trim())}&w=1600&h=1600&c=7&rs=1&qlt=100&pid=Api&mkt=zh-TW&nocache=${Date.now() + index}`;
         }
 
         let manualRefreshIndex = 100; 
@@ -656,12 +656,10 @@
             const slideHtml = tempDiv.innerHTML;
             const hlClass = isHighlightMode ? 'class="show-highlight"' : '';
             
-            // 更穩定地擷取網頁中所有的 <style> 標籤內容
             const styles = Array.from(document.querySelectorAll('style')).map(s => s.innerHTML).join('\n');
-            
-            // 確保混搭模式與單一主題模式的屬性正確寫入
             const wrapperThemeAttr = currentThemeId === 'mix' ? '' : `data-theme="${currentThemeId}"`;
 
+            // --- 移除底部毛玻璃選單，改為左右點擊翻頁 ---
             const exportHtml = `<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -671,14 +669,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Noto+Serif+TC:wght@300;400;500;600&family=Inter:wght@200;300;400&display=swap" rel="stylesheet">
     <style>
         ${styles} 
-        body { justify-content: center; align-items: center; background: #111; margin: 0; } 
+        body { justify-content: center; align-items: center; background: #111; margin: 0; cursor: pointer; } 
         .presentation-wrapper { 
             width: 100vw; max-width: 1920px; aspect-ratio: 16/9; position: relative; 
             container-type: inline-size; overflow: hidden; margin: 0 auto;
         } 
-        .ui-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 20px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 8px 24px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.15);} 
-        .ui-bar .icon-btn { color: #fff; } .ui-bar .icon-btn:hover { color: var(--ui-hl); }
-        .ui-bar .slide-counter { color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         
         @media (max-width: 900px) { 
             .presentation-wrapper { width: 100%; height: auto; aspect-ratio: auto; min-height: 100vh; display: block; overflow-y: auto;} 
@@ -699,25 +694,27 @@
     <div class="presentation-wrapper" id="board" ${wrapperThemeAttr}>
         ${slideHtml}
     </div>
-    <div class="ui-bar">
-        <button class="icon-btn" id="btn-prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-        <div class="slide-counter"><span id="num-curr">1</span> / <span id="num-tot">0</span></div>
-        <button class="icon-btn" id="btn-next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-    </div>
     <script>
         const slides = document.querySelectorAll('.slide'); 
-        const currEl = document.getElementById('num-curr'); 
-        document.getElementById('num-tot').innerText = slides.length; 
         let c = 0; 
-        function update() { slides.forEach((s, i) => s.classList.toggle('active', i === c)); currEl.innerText = c + 1; } 
+        function update() { slides.forEach((s, i) => s.classList.toggle('active', i === c)); } 
         if(slides.length > 0) update(); 
         
-        document.getElementById('btn-prev').addEventListener('click', () => { if(c > 0) { c--; update(); }}); 
-        document.getElementById('btn-next').addEventListener('click', () => { if(c < slides.length - 1) { c++; update(); }}); 
+        // 鍵盤左右鍵翻頁
         document.addEventListener('keydown', (e) => { 
             if(e.key === 'ArrowRight' && c < slides.length - 1) { c++; update(); } 
             if(e.key === 'ArrowLeft' && c > 0) { c--; update(); }
         }); 
+
+        // 點擊畫面左右側翻頁 (並防止複製文字時觸發)
+        document.addEventListener('click', (e) => {
+            if (window.getSelection().toString().length > 0) return; 
+            if (e.clientX < window.innerWidth / 2) {
+                if(c > 0) { c--; update(); }
+            } else {
+                if(c < slides.length - 1) { c++; update(); }
+            }
+        });
         
         function autoFit() { 
             if(window.innerWidth <= 900) return; 
