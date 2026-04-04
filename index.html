@@ -829,7 +829,7 @@
             this.classList.toggle('active-mode', isAiMode);
             
             let activeIcon = isAiMode ? document.getElementById('icon-magic') : document.getElementById('icon-lock');
-            let text = isAiMode ? "智能淬鍊" : "保留原文";
+            let text = isAiMode ? "智能擴充" : "保留原文";
             showHUDFeedback(activeIcon, text);
         });
         
@@ -903,12 +903,32 @@
             showHUDFeedback(this.querySelector('svg'), "插入分頁標記");
         });
 
-        function splitIntoChunks(text, maxLength = 95) {
-            const sentences = text.split(/([。！？.!?\n])/); let merged = [];
-            for (let i = 0; i < sentences.length; i += 2) { let s = sentences[i], punc = sentences[i + 1] || ""; if (s + punc) merged.push(s + punc); }
+       function splitIntoChunks(text, maxLength = 95) {
+            // 新增 ，,；; 作為切割符號，避免詩詞或長文沒句號切不開
+            const sentences = text.split(/([。！？.!?\n，,；;])/); 
+            let merged = [];
+            for (let i = 0; i < sentences.length; i += 2) { 
+                let s = sentences[i], punc = sentences[i + 1] || ""; 
+                if (s + punc) merged.push(s + punc); 
+            }
             let chunks = [], cur = "";
-            for (let s of merged) { s = s.trim(); if (!s) continue; if (cur.length + s.length <= maxLength) cur += (cur ? " " : "") + s; else { if (cur) chunks.push(cur); cur = s; } }
-            if (cur) chunks.push(cur); return chunks;
+            for (let s of merged) { 
+                s = s.trim(); 
+                if (!s) continue; 
+                if (cur.length + s.length <= maxLength) {
+                    cur += cur ? s : s; // 中文相接不需要加空白
+                } else { 
+                    if (cur) chunks.push(cur); 
+                    // 防呆機制：如果遇到完全沒標點符號的超長文字，強制依字數暴力截斷
+                    while (s.length > maxLength) {
+                        chunks.push(s.substring(0, maxLength));
+                        s = s.substring(maxLength);
+                    }
+                    cur = s; 
+                } 
+            }
+            if (cur) chunks.push(cur); 
+            return chunks;
         }
 
         function getTopKeywords(text, count = 3) {
@@ -1011,16 +1031,40 @@
                             finalHtml = chunks.map((c, i) => `<div class="slide"><h2>${titles[i]}</h2><p>${c.replace(/\n/g, '<br>')}</p></div>`).join("\n");
                         } catch(e) { finalHtml = chunks.map((c, i) => `<div class="slide"><h2>章節 ${i+1}</h2><p>${c.replace(/\n/g, '<br>')}</p></div>`).join("\n"); }
                     }
-                } else {
-                    showLoader("AI 網格重組...");
-                    let tempDiv = document.createElement('div'); tempDiv.innerHTML = promptInput.innerHTML;
-                    tempDiv.querySelectorAll('.page-break-line').forEach(el => el.innerText = '\n\n[MANUAL_PAGE_BREAK]\n\n');
+               } else {
+                    showLoader("AI智能擴充...");
                     
-                    let titleInstruction = "Format: <div class=\"slide\"><h2>[Sub]</h2><p>[Text]</p></div>";
-                    if (titleMode === 0) titleInstruction = "Format: <div class=\"slide\"><p>[Text]</p></div>. DO NOT output <h2> tags.";
-                    else if (titleMode === 1) titleInstruction = "Format: <div class=\"slide\"><h2>點擊輸入標題</h2><p>[Text]</p></div>. Always use literal '點擊輸入標題' for all <h2> tags.";
+                    // 將前端嚴格切好的字塊，格式化成明確的頁碼結構餵給 AI
+                    let aiInputText = chunks.map((c, i) => `[第 ${i+1} 頁草稿]：\n${c}`).join('\n\n');
+                    
+                    let titleInstruction = "【強制結構】：每頁投影片必須完全符合這個格式：\n<div class=\"slide\">\n  <h2>[繁體中文短標題]</h2>\n  <p>[擴充後的具體內文，若需換行請用 <br>]</p>\n</div>";
+                    if (titleMode === 0) titleInstruction = "【強制結構】：每頁投影片必須完全符合這個格式：\n<div class=\"slide\">\n  <p>[擴充後的具體內文，若需換行請用 <br>]</p>\n</div>\n絕對禁止輸出 <h2> 或 <h1> 標籤。";
+                    else if (titleMode === 1) titleInstruction = "【強制結構】：每頁投影片必須完全符合這個格式：\n<div class=\"slide\">\n  <h2>點擊輸入標題</h2>\n  <p>[擴充後的具體內文，若需換行請用 <br>]</p>\n</div>\n所有 <h2> 標籤內必須一字不漏地填入「點擊輸入標題」。";
 
-                    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEYS[0]}` }, body: JSON.stringify({ model: MODEL, messages: [ { role: "system", content: `You are a designer. Output HTML. RULES: 1. Traditional Chinese 2. Start slide at [MANUAL_PAGE_BREAK]. 3. ${titleInstruction}` }, { role: "user", content: tempDiv.innerText } ] }) });
+                    const res = await fetch(API_URL, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEYS[0]}` }, 
+                        body: JSON.stringify({ 
+                            model: MODEL, 
+                            messages: [ 
+                                { 
+                                    role: "system", 
+                                    content: `你是頂級的簡報企劃專家。你的任務是將使用者的草稿擴充並排版。
+嚴格遵守以下規則：
+1. 語言限制：【必須】全部使用標準繁體中文。
+2. 內容擴充：根據草稿補充具體細節，但每張投影片內文【絕對不允許】超過 95 個字！
+3. 強制一對一產出（關鍵）：使用者已經把草稿分為多個 [第 X 頁草稿]。你【必須】為每一個草稿產出對應的「一張」投影片。有幾頁草稿，就必須產出幾個 <div class="slide">，絕對禁止將多頁草稿合併成一頁！
+4. 唯一標籤限制：每個 slide 裡面【只能有一個 <p> 標籤】來包裝所有內文！絕對禁止使用 <ul>、<li> 等標籤。
+5. 只允許輸出純 HTML，不要包含 markdown 語法。
+6. ${titleInstruction}` 
+                                }, 
+                                { 
+                                    role: "user", 
+                                    content: `請幫我逐頁擴充以下簡報內容，確保產出的 <div class="slide"> 數量與提供的草稿頁數完全一致：\n\n${aiInputText}` 
+                                } 
+                            ] 
+                        }) 
+                    });
                     finalHtml = (await res.json()).choices[0].message.content.replace(/```html/gi, '').replace(/```/gi, '').trim();
                 }
 
