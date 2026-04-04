@@ -750,7 +750,8 @@
                     pptSlide.addText(textRuns, { x: txtX, y: curY, w: txtW, h: (boxY+boxH)-curY-0.2, align: 'left', valign: 'top', fontFace: font, fontSize: 16, lineSpacing: 25 }); 
                 }
 
-                pptSlide.addText(String(index + 1).padStart(2, '0'), { x: 9.0, y: 5.1, w: 0.8, h: 0.4, align: 'right', fontFace: 'Cinzel', fontSize: 16, color: '999999' });
+                // [修訂點]：將原本的靜態純文字替換為 PptxGenJS 原生的動態幻燈片編號 (slideNumber) 屬性
+                pptSlide.slideNumber = { x: 9.0, y: 5.1, w: 0.8, h: 0.4, align: 'right', fontFace: 'Cinzel', fontSize: 16, color: '999999' };
             });
             pres.writeFile({ fileName: "AURA_Presentation.pptx" });
         });
