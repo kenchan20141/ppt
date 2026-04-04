@@ -96,17 +96,19 @@
         .mix-options { display: none; justify-content: center; gap: 10px; margin-bottom: 2rem; opacity: 0; transition: opacity 0.3s; }
         .mix-options.show { display: flex; opacity: 1; }
         
-        /* 修改：讓所有混搭點點都擁有統一柔和外框，移除生硬黑色邊 */
-        .mix-toggle { 
+       /* 修改：混搭點點改為立體白圈風格 */
+       .mix-toggle { 
             width: 14px; height: 14px; border-radius: 50%; cursor: pointer; 
-            border: 1.5px solid var(--ui-border); opacity: 0.3; transition: 0.3s; transform: scale(0.9); 
+            border: 1.4px solid #ffffff; /* 縮細為 1px 白框，看起來更精緻 */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15); /* 陰影跟著調輕，避免看起來像灰框 */
+            opacity: 0.3; transition: 0.3s; transform: scale(0.9); 
         }
         .mix-toggle:hover { opacity: 0.7; }
         .mix-toggle.active { 
-            opacity: 1; transform: scale(1.1); box-shadow: 0 2px 6px rgba(0,0,0,0.15); 
-            border-color: var(--ui-muted); 
+            opacity: 1; transform: scale(1.2); 
+            border-color: #ffffff; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2); /* 選中時的陰影也稍微調柔和 */
         }
-
         .toolbar { display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 1rem; height: 36px;}
         .icon-toggle { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; background: transparent; border: 1px solid transparent; transition: all 0.3s ease; color: var(--ui-icon); }
         .icon-toggle:hover { color: var(--ui-text); background: var(--ui-bg); }
@@ -296,6 +298,68 @@
             .controls-container { bottom: 1rem; }
             .mix-options { margin-bottom: 1.5rem; }
         }
+
+/* --- 版權宣告 --- */
+.copyright-footer {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    padding: 5px 10px;
+    background-color: var(--ui-bg); /* 改用全域變數，支援深/淺色主題無縫切換 */
+    color: var(--ui-muted); /* 字體顏色配合介面 */
+    border-top-left-radius: 4px; /* 增加一點精緻的圓角 */
+    border-top: 1px solid var(--ui-border);
+    border-left: 1px solid var(--ui-border);
+    z-index: 999; /* 確保不會被簡報或控制列遮蓋 */
+    transition: all 0.3s ease;
+}
+
+.copyright-footer p {
+    margin: 0;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif; /* 統一英文字體 */
+}
+
+/* 響應式：在手機等小螢幕自動縮小字體與間距 */
+@media (max-width: 600px) {
+    .copyright-footer {
+        padding: 4px 8px;
+    }
+    .copyright-footer p {
+        font-size: 11px;
+    }
+}
+
+        /* --- 針對手機與平板的版權宣告與按鈕防遮擋微調 --- */
+@media (max-width: 1024px) {
+    /* 1. 確保 GENERATE 按鈕下方有足夠空間，滑動到底時不會跟版權卡在一起 */
+    #generateBtn {
+        margin-bottom: 2.5rem; 
+    }
+
+    /* 2. 在手機與平板上，將版權宣告改為底部滿版置中，看起來更和諧 */
+    .copyright-footer {
+        left: 0;
+        right: 0;
+        border-left: none;
+        border-radius: 0;
+        text-align: center;
+        padding: 6px 10px;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.03); /* 加一點極淡的陰影作為區隔 */
+    }
+    
+    .copyright-footer p {
+        font-size: 11px; /* 字體微調，更精緻 */
+    }
+
+    /* 3. UX 優化：進入簡報「預覽畫面」時自動隱藏版權列，確保不會擋到翻頁控制列 */
+    body.preview-mode .copyright-footer {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+}
+        
     </style>
 </head>
 <body>
@@ -930,5 +994,14 @@
             }
         });
     </script>
+<!-- 加入版權宣告 -->
+    <footer class="copyright-footer">
+        <p>Copyright © 2026 Chan Kwun Kin. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
+
+    
 </body>
 </html>
