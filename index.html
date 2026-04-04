@@ -170,9 +170,8 @@
 
         /* 一般版式 */
         .feature-img-wrapper { 
-            position: relative; z-index: 20; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; 
+            position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; 
             opacity: var(--feature-img-opacity); filter: contrast(1.05) saturate(0.85); transition: opacity 0.3s, transform 0.5s, filter 0.5s;
-            pointer-events: auto; /* 強制影像區域可被點擊 */
         }
         
         .art-frame { position: relative; padding: 0.8cqw; background: var(--slide-frame); border: 1px solid var(--slide-border); box-shadow: 0 15px 45px rgba(0,0,0,0.1); max-width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; transition: background 0.5s, border-color 0.5s;}
@@ -205,7 +204,7 @@
         body.use-geometric .slide .feature-img-wrapper {
             filter: grayscale(30%) sepia(10%) contrast(1.1);
             -webkit-mask-image: none !important; mask-image: none !important;
-            z-index: 20; 
+            z-index: 2; 
         }
         
         body.use-geometric .slide .art-frame {
@@ -264,9 +263,9 @@
         .empty-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; opacity: 0.15; transition: opacity 0.5s;}
         .empty-state svg { width: 100px; height: 100px; stroke: var(--ui-text); stroke-width: 0.5; fill: none; animation: breathe 4s infinite ease-in-out; }
         
-        /* --- 全新 ActionBar 佈局設定 (解決電腦/手機並排問題) --- */
-        .action-bar { position: absolute; top: 2rem; right: 2.5rem; display: flex; align-items: center; gap: 15px; z-index: 20; }
-        .ab-row { display: flex; align-items: center; gap: 15px; }
+        /* === Action Bar 設計更新 (支援雙行響應式) === */
+        .action-bar { position: absolute; top: 2rem; right: 2.5rem; display: flex; align-items: center; gap: 15px; z-index: 20;}
+        .action-row { display: flex; align-items: center; gap: 15px; }
 
         .sub-keyword-group { display: flex; align-items: center; border-bottom: 1px solid var(--ui-border); padding-bottom: 2px; transition: 0.3s; }
         .sub-keyword-group:focus-within { border-bottom-color: var(--ui-text); }
@@ -315,7 +314,7 @@
         .custom-modal-btn-confirm { background: var(--ui-text); color: var(--ui-surface); border: 1px solid var(--ui-text); }
         .custom-modal-btn-confirm:hover { background: transparent; color: var(--ui-text); }
 
-        /* 手機版樣式與完美上下行對齊 */
+        /* === 手機端響應式更新 === */
         @media (max-width: 1024px) {
             body { flex-direction: column; height: 100dvh; overflow: hidden; }
             .sidebar { width: 100%; height: 100dvh; max-height: 100dvh; padding: 2rem; border-right: none; overflow-y: auto; flex: none; transition: transform 0.4s cubic-bezier(0.25,0.8,0.25,1); }
@@ -331,26 +330,29 @@
 
             .presentation-wrapper { width: 100%; max-width: 100%; }
             
-            /* 將 ActionBar 在手機版拆解為兩行 (Row1: 返回與關鍵字 / Row2: 匯出鈕與雙控制條) */
-            .action-bar { top: 1rem; left: 1rem; right: 1rem; flex-direction: column; align-items: stretch; gap: 10px; }
-            .ab-row { width: 100%; gap: 8px; }
-            .ab-row.bottom-row { justify-content: space-between; overflow-x: auto; padding-bottom: 2px; }
+            /* 手機端 Action Bar 重新佈局: 雙列且不折行 */
+            .action-bar { 
+                top: 1rem; left: 1rem; right: 1rem; 
+                flex-direction: column; gap: 10px; 
+            }
+            .action-row.top-row { width: 100%; justify-content: space-between; }
+            .action-row.bottom-row { width: 100%; justify-content: flex-end; gap: 8px; flex-wrap: nowrap; overflow-x: auto; }
             
-            .mobile-back-btn { display: flex; margin-right: 5px; flex-shrink: 0; } 
-            .sub-keyword-group { flex: 1; min-width: 120px; }
-            .sub-keyword-group input { width: 100%; }
+            .opacity-control { padding-right: 0; gap: 4px; border-right: none; }
+            .opacity-control svg { width: 14px; height: 14px; flex-shrink: 0;}
+            /* 強制縮小滑桿長度以塞入單行 */
+            input[type=range] { width: clamp(35px, 8vw, 60px); }
+            .btn-export { padding: 4px 6px; font-size: 0.65rem; letter-spacing: 1px; flex-shrink: 0;}
             
-            .btn-export { padding: 4px 6px; font-size: 0.7rem; flex-shrink: 0; letter-spacing: 1px; }
-            .opacity-control { padding-right: 0; border-right: none; gap: 4px; flex-shrink: 0; }
-            .opacity-control svg { width: 15px; height: 15px; }
-            input[type=range] { width: 45px; }
+            .sub-keyword-group input { width: 120px; }
+            .mobile-back-btn { display: flex; } 
 
             .controls-container { bottom: 1rem; }
             .mix-options { margin-bottom: 1.5rem; }
 
             body.use-geometric .slide .feature-img-wrapper { 
                 display: block !important; position: absolute;
-                width: 180px; height: 180px; z-index: 20; /* 確保幾何模式的圖片置頂可被點擊 */
+                width: 180px; height: 180px; z-index: 1;
                 grid-area: auto !important; transform: none !important;
             }
             body.use-geometric .slide .text-content-wrapper { position: relative; z-index: 5; padding: 2rem !important; }
@@ -456,9 +458,9 @@
     </div>
 
     <div class="main-content">
-        <!-- 將 ActionBar 拆解為 Row-1 與 Row-2 的精確佈局 -->
+        <!-- Action Bar 改為雙列巢狀結構，以解決手機端擠行問題 -->
         <div class="action-bar" id="actionBar" style="display: none;">
-            <div class="ab-row top-row">
+            <div class="action-row top-row">
                 <button class="icon-btn mobile-back-btn" id="mobileBackBtn" title="返回編輯器">
                     <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12" stroke-width="2"></line><polyline points="12 19 5 12 12 5" stroke-width="2"></polyline></svg>
                 </button>
@@ -468,9 +470,7 @@
                 </div>
             </div>
             
-            <div class="ab-row bottom-row">
-                <button id="btnExportHtml" class="btn-export">HTML</button>
-                <button id="btnExportPptx" class="btn-export">PPTX</button>
+            <div class="action-row bottom-row">
                 <div class="opacity-control" title="調整背景濃度">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20v-20z" fill="currentColor" opacity="0.3"/></svg>
                     <input type="range" id="opacitySlider" min="0" max="100" value="20">
@@ -479,6 +479,8 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     <input type="range" id="imgOpacitySlider" min="10" max="100" value="75">
                 </div>
+                <button id="btnExportHtml" class="btn-export">HTML</button>
+                <button id="btnExportPptx" class="btn-export">PPTX</button>
             </div>
         </div>
 
@@ -630,15 +632,11 @@
             if (!text) return []; let cleanText = text.replace(/[0-9０-９]/g, '');
             const isDatePattern = (str) => /^[一二三四五六七八九十百千萬億兆零〇年月日號]+$/.test(str) && /[年月日號]/.test(str);
             let words = [];
-            
-            // 強大的分詞回退機制，確保任何裝置都能抓出詞彙
             if (typeof Intl.Segmenter === 'function') {
                 const segmenter = new Intl.Segmenter(['zh-TW', 'en'], { granularity: 'word' });
                 words = [...segmenter.segment(cleanText)].filter(s => s.isWordLike).map(s => s.segment.trim()).filter(w => !stopWords.has(w.toLowerCase()) && !isDatePattern(w) && w.length >= 2);
             } else {
-                let enWords = cleanText.match(/[a-zA-Z]{2,}/g) || []; 
-                let chText = cleanText.replace(/[^\u4e00-\u9fa5]/g, ''); 
-                let chWords = [];
+                let enWords = cleanText.match(/[a-zA-Z]{2,}/g) || []; let chText = cleanText.replace(/[^\u4e00-\u9fa5]/g, ''); let chWords = [];
                 for (let i = 0; i < chText.length - 1; i++) chWords.push(chText.substring(i, i + 2));
                 words = [...enWords, ...chWords].filter(w => !stopWords.has(w.toLowerCase()) && !isDatePattern(w));
             }
@@ -664,26 +662,7 @@
         function triggerCurrentSlideRefresh() {
             if (slides.length === 0 || currentLayoutMode === 2) return; 
             let imgEl = slides[currentIndex].querySelector('.art-frame img');
-            if (imgEl) { 
-                let inputVal = subKeywordInput.value.trim();
-                if (!inputVal) {
-                    // 同樣套用終極文字抓取法
-                    let textContainer = slides[currentIndex].querySelector('.text-inner-scroll');
-                    let slideText = textContainer ? textContainer.textContent : ""; 
-                    let storageKey = `aura_slide_${currentIndex}_kws`;
-                    let usedKws = JSON.parse(sessionStorage.getItem(storageKey) || "[]");
-                    let potentialKws = getTopKeywords(slideText, 20);
-                    let newSub = potentialKws.find(kw => !usedKws.includes(kw));
-                    if (newSub) {
-                        usedKws.push(newSub);
-                        sessionStorage.setItem(storageKey, JSON.stringify(usedKws));
-                        inputVal = newSub;
-                        subKeywordInput.value = newSub;
-                    }
-                }
-                imgEl.setAttribute('data-sub', inputVal); 
-                refreshImage(imgEl); 
-            }
+            if (imgEl) { imgEl.setAttribute('data-sub', subKeywordInput.value.trim()); refreshImage(imgEl); }
         }
         
         btnRefreshImg.addEventListener('click', triggerCurrentSlideRefresh);
@@ -790,7 +769,7 @@
                 textWrapper.appendChild(scrollArea); newSlide.appendChild(textWrapper);
 
                 if (assignedLayout !== 'layout-center') {
-                    const imgWrapper = document.createElement('div'); imgWrapper.className = 'feature-img-wrapper';
+                    const p = slide.querySelector('p'), imgWrapper = document.createElement('div'); imgWrapper.className = 'feature-img-wrapper';
                     const artFrame = document.createElement('div'); artFrame.className = 'art-frame';
                     const featureImg = document.createElement('img'); featureImg.crossOrigin = "anonymous";
                     
@@ -798,10 +777,8 @@
                         featureImg.src = `https://picsum.photos/seed/${Math.floor(Math.random() * 99999)}/800/800`;
                         artFrame.classList.add('no-hover'); 
                     } else { 
-                        // 【終極解法】讀取整頁內容，徹底無視 AI 是否忘記包裹 <p> 標籤！
-                        let slideTextForKw = slide.textContent || ""; 
-                        let initialSub = slideTextForKw.trim() ? extractKeywords(slideTextForKw) : "";
-                        
+                        // ✅ 關鍵修正：將 innerText 改為 textContent，解決手機端未渲染 DOM 無法抓取文字的 Bug
+                        let initialSub = p && p.textContent ? extractKeywords(p.textContent) : "";
                         featureImg.src = getImageUrl(globalMainKeyword, initialSub, index);
                         featureImg.setAttribute('data-main', globalMainKeyword); 
                         featureImg.setAttribute('data-sub', initialSub);
@@ -809,28 +786,18 @@
                         featureImg.addEventListener('click', function() {
                             if (this.classList.contains('reloading') || currentLayoutMode === 2) return; 
                             this.classList.add('reloading');
+                            let currentP = newSlide.querySelector('p');
                             
-                            // 同樣使用終極抓取法：不依賴任何特定標籤
-                            let textContainer = newSlide.querySelector('.text-inner-scroll');
-                            let slideText = textContainer ? textContainer.textContent : ""; 
-                            
-                            // 當前畫面確實沒有半點文字，才中止重整
+                            // ✅ 同步修正這裡的 innerText，確保點擊圖片時能正常獲取文字並變更關鍵詞
+                            let slideText = currentP ? currentP.textContent : ""; 
                             if (!slideText.trim()) { this.classList.remove('reloading'); return; }
 
                             let storageKey = `aura_slide_${index}_kws`, usedKws = JSON.parse(sessionStorage.getItem(storageKey) || "[]"), currentSub = this.getAttribute('data-sub');
                             if (currentSub && !usedKws.includes(currentSub)) usedKws.push(currentSub);
-                            
                             let potentialKws = getTopKeywords(slideText, 20), newSub = potentialKws.find(kw => !usedKws.includes(kw));
                             if (!newSub && potentialKws.length > 0) { usedKws = [currentSub].filter(Boolean); newSub = potentialKws.find(kw => kw !== currentSub) || potentialKws[0]; }
-                            
-                            if (newSub) { 
-                                usedKws.push(newSub); 
-                                sessionStorage.setItem(storageKey, JSON.stringify(usedKws)); 
-                                this.setAttribute('data-sub', newSub); 
-                                if (slides[currentIndex] === newSlide) subKeywordInput.value = newSub; 
-                            }
-                            this.classList.remove('reloading'); 
-                            refreshImage(this);
+                            if (newSub) { usedKws.push(newSub); sessionStorage.setItem(storageKey, JSON.stringify(usedKws)); this.setAttribute('data-sub', newSub); if (slides[currentIndex] === newSlide) subKeywordInput.value = newSub; }
+                            this.classList.remove('reloading'); refreshImage(this);
                         });
                     }
 
@@ -963,21 +930,29 @@
                 let natH = imgEl.naturalHeight || 800;
                 let minSide = Math.min(natW, natH);
                 let size = Math.min(minSide, 800); 
+                
                 const canvas = document.createElement('canvas');
                 canvas.width = size; canvas.height = size;
                 const ctx = canvas.getContext('2d');
+                
                 ctx.beginPath();
                 ctx.arc(size/2, size/2, size/2, 0, 2*Math.PI);
                 ctx.closePath();
                 ctx.clip();
+                
                 ctx.filter = 'grayscale(30%) sepia(10%) contrast(1.1)';
+                
                 let sw = natW, sh = natH;
                 let sx = 0, sy = 0;
                 if (sw > sh) { sx = (sw - sh) / 2; sw = sh; }
                 else { sy = (sh - sw) / 2; sh = sw; }
+                
                 ctx.drawImage(imgEl, sx, sy, sw, sh, 0, 0, size, size);
                 return canvas.toDataURL('image/png'); 
-            } catch(e) { return imgEl.src; }
+            } catch(e) {
+                console.warn("Canvas crop failed, fallback to original", e);
+                return imgEl.src;
+            }
         }
 
         document.getElementById('btnExportPptx').addEventListener('click', async () => {
@@ -1018,7 +993,7 @@
                         else if (cList.contains('layout-img-right')) { imgW = 5.5; imgH = 5.5; imgX = 7.25; imgY = 0.0625; }
                         else if (cList.contains('layout-overlap-left')) { imgW = 4.5; imgH = 4.5; imgX = -1.0; imgY = 1.5; }
                         else if (cList.contains('layout-overlap-right')) { imgW = 5.5; imgH = 5.5; imgX = 6.0; imgY = -2.75; }
-                        else if (cList.contains('layout-bottom-text')) { imgW = 5.5; imgH = 5.5; imgX = 2.25; imgY = 2.875; boxY = 0.8; }
+                        else if (cList.contains('layout-bottom-text')) { imgW = 5.5; imgH = 5.5; imgX = 2.25; imgY = 2.875; boxY = 0.8;}
                     } else {
                         if (cList.contains('layout-img-left')) { imgX=0.5; imgY=0.6; imgW=3.5; imgH=4.4; boxX=4.5; boxY=1.0; boxW=5.0; boxH=3.6; } 
                         else if (cList.contains('layout-img-right')) { boxX=0.5; boxY=1.0; boxW=5.0; boxH=3.6; imgX=6.0; imgY=0.6; imgW=3.5; imgH=4.4; } 
@@ -1033,7 +1008,6 @@
                     let totalReqH = 0.7;
                     if (h1) totalReqH += 0.65;
                     if (h2) totalReqH += 0.45;
-                    
                     if (p) {
                         let pText = p.innerText || "";
                         let charsPerLine = Math.floor((boxW - 0.7) / 0.24); 
@@ -1054,7 +1028,6 @@
                         if (!isGeometricLayout && cList.contains('layout-bottom-text')) boxY += heightDiff; else boxY += (heightDiff / 2);
                     }
 
-                    // 渲染主配圖
                     if (hasImg) {
                         let featureImg = slide.querySelector('.feature-img-wrapper img');
                         if (featureImg) {
@@ -1078,7 +1051,6 @@
                     pptSlide.addShape(pres.ShapeType.line, { x: boxX+boxW-0.15, y: boxY+boxH-0.15-cLen, w: 0, h: cLen, line: { color: cTheme.line, width: 1.5 } }); 
 
                     let curY = boxY + 0.35, txtW = boxW - 0.7, txtX = boxX + 0.35;
-                    
                     if(h1) { pptSlide.addText(h1.innerText, { x: txtX, y: curY, w: txtW, h: 0.6, align: 'left', fontFace: font, fontSize: 32, color: cTheme.textMain, fit: 'shrink' }); curY += 0.65; }
                     if(h2) { pptSlide.addText(h2.innerText, { x: txtX, y: curY, w: txtW, h: 0.4, align: 'left', fontFace: font, fontSize: 20, color: cTheme.textMuted, fit: 'shrink' }); curY += 0.45; }
                     if(p) { 
