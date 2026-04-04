@@ -314,29 +314,62 @@
     transition: all 0.3s ease;
 }
 
+/* --- 版權宣告（手機單行完整顯示優化版）--- */
 .copyright-footer p {
     margin: 0;
-    font-size: 14px;
-    font-family: 'Inter', sans-serif; /* 統一英文字體 */
+    font-size: 9.2px;                    /* 再調小，確保塞得下 */
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.8px;               /* 明顯縮小字距 */
+    font-weight: 400;
+    text-transform: uppercase;
+    opacity: 0.6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;                     /* 確保不超出容器 */
+    padding: 0 4px;                      /* 左右留一點緩衝 */
 }
 
-/* 響應式：在手機等小螢幕自動縮小字體與間距 */
-@media (max-width: 600px) {
-    .copyright-footer {
-        padding: 4px 8px;
-    }
-    .copyright-footer p {
-        font-size: 11px;
-    }
-}
-
-        /* --- 針對手機與平板的版權宣告與按鈕防遮擋微調 --- */
+/* === 手機版 COPYRIGHT 與 GENERATE 間距微調（已減半）=== */
 @media (max-width: 1024px) {
-    /* 1. 確保 GENERATE 按鈕下方有足夠空間，滑動到底時不會跟版權卡在一起 */
     #generateBtn {
-        margin-bottom: 2.5rem; 
+        margin-bottom: 21px;        /* ← 從 42px 減半 */
     }
+    
+    .sidebar {
+        padding-bottom: 65px;       /* ← 從 130px 減半 */
+    }
+    
+    .copyright-footer {
+        padding: 8px 12px 9px;
+        min-height: auto;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.03);
+    }
+    
+    .copyright-footer p {
+        font-size: 8.8px;
+        letter-spacing: 0.8px;
+    }
+}
 
+/* 極小手機再微調 */
+@media (max-width: 600px) {
+    #generateBtn {
+        margin-bottom: 19px;        /* ← 同步減半 */
+    }
+    
+    .sidebar {
+        padding-bottom: 62px;
+    }
+    
+    .copyright-footer {
+        padding: 7px 10px 8px;
+    }
+    
+    .copyright-footer p {
+        font-size: 8.5px;
+    }
+}
     /* 2. 在手機與平板上，將版權宣告改為底部滿版置中，看起來更和諧 */
     .copyright-footer {
         left: 0;
@@ -996,7 +1029,7 @@
     </script>
 <!-- 加入版權宣告 -->
     <footer class="copyright-footer">
-        <p>Copyright © 2026 Chan Kwun Kin. All rights reserved.</p>
+       <p>© 2026 AURA • Chan Kwun Kin. All rights reserved.</p>
     </footer>
 
 </body>
