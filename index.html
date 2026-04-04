@@ -975,13 +975,26 @@
                     let pShape = pres.ShapeType.rect;
                     
                     if (isGeometricLayout) {
-                        boxX = 1.0; boxY = 1.5; boxW = 8.0; boxH = 2.6; // 文字居中版塊
-                        pShape = pres.ShapeType.oval;
-                        if (cList.contains('layout-img-left')) { imgX = -1.0; imgY = 0.5; imgW = 4.0; imgH = 4.5; pShape = pres.ShapeType.roundRect; }
-                        else if (cList.contains('layout-img-right')) { imgX = 7.0; imgY = 2.0; imgW = 4.5; imgH = 4.5; pShape = pres.ShapeType.roundRect; }
-                        else if (cList.contains('layout-overlap-left')) { imgX = 0.8; imgY = 2.8; imgW = 3.0; imgH = 3.0; pShape = pres.ShapeType.oval; }
-                        else if (cList.contains('layout-overlap-right')) { imgX = 6.0; imgY = -0.5; imgW = 4.5; imgH = 2.5; pShape = pres.ShapeType.roundRect; }
-                        else if (cList.contains('layout-bottom-text')) { imgX = 3.5; imgY = 4.0; imgW = 4.0; imgH = 2.0; pShape = pres.ShapeType.roundRect; }
+                        boxX = 1.5; boxY = 1.5; boxW = 7.0; boxH = 2.6; // 統一的文字中央版塊
+                        pShape = pres.ShapeType.oval; // 強制全部設為完美的圓形
+                        
+                        // 利用完美的圓形，將一半的面積移出幻燈片邊界，讓 PowerPoint 自動切出精美的半圓形！
+                        if (cList.contains('layout-img-left')) { 
+                            imgW = 5.5; imgH = 5.5; imgX = -2.75; imgY = 0.0625; // 中心點移至左邊界外
+                        }
+                        else if (cList.contains('layout-img-right')) { 
+                            imgW = 5.5; imgH = 5.5; imgX = 7.25; imgY = 0.0625; // 中心點移至右邊界外
+                        }
+                        else if (cList.contains('layout-overlap-left')) { 
+                            imgW = 4.5; imgH = 4.5; imgX = -1.0; imgY = 1.5; // 完整的圓，微偏移
+                        }
+                        else if (cList.contains('layout-overlap-right')) { 
+                            imgW = 5.5; imgH = 5.5; imgX = 6.0; imgY = -2.75; // 中心點移至上邊界外
+                        }
+                        else if (cList.contains('layout-bottom-text')) { 
+                            imgW = 5.5; imgH = 5.5; imgX = 2.25; imgY = 3.5; // 中心點移至下邊界，做出上半圓
+                            boxY = 0.8; // 文字稍微上移平衡畫面
+                        }
                     } else {
                         if (cList.contains('layout-img-left')) { imgX=0.5; imgY=0.6; imgW=3.5; imgH=4.4; boxX=4.5; boxY=1.0; boxW=5.0; boxH=3.6; } 
                         else if (cList.contains('layout-img-right')) { boxX=0.5; boxY=1.0; boxW=5.0; boxH=3.6; imgX=6.0; imgY=0.6; imgW=3.5; imgH=4.4; } 
@@ -1028,7 +1041,7 @@
                                     x: isGeometricLayout ? imgX : imgX+0.1, y: isGeometricLayout ? imgY : imgY+0.1, 
                                     sizing: { type: 'cover', w: isGeometricLayout ? imgW : imgW-0.2, h: isGeometricLayout ? imgH : imgH-0.2 },
                                     transparency: pptxImgOpacity,
-                                    shape: pShape
+                                    shape: pShape // 這裡現在絕對是完美的圓形
                                 }); 
                             } catch(e){}
                         }
