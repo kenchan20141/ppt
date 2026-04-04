@@ -144,18 +144,21 @@
 
         .slide > .bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: var(--bg-opacity); z-index: 1; pointer-events: none; filter: grayscale(100%); transition: opacity 0.3s; }
 
+        /* [核心修正1] 設定 pointer-events 允許穿透玻璃背景 */
         .text-content-wrapper {
             position: relative; z-index: 3; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
             background: var(--slide-glass); backdrop-filter: blur(15px);
             border: 1px solid var(--slide-border); padding: 3cqw 3.5cqw;
             box-shadow: 0 15px 40px rgba(0,0,0,0.06); border-radius: 2px; transition: background 0.5s, border-color 0.5s;
             height: fit-content; max-height: 100%; align-self: center;
+            pointer-events: none; /* 讓點擊事件可以穿透玻璃區塊的空白處，到達圖片 */
         }
         .text-content-wrapper::before, .text-content-wrapper::after { content: ''; position: absolute; width: 1.5cqw; height: 1.5cqw; border: 1.5px solid var(--slide-border-dark); pointer-events: none; transition: border-color 0.5s;}
         .text-content-wrapper::before { top: 1cqw; left: 1cqw; border-right: none; border-bottom: none; }
         .text-content-wrapper::after { bottom: 1cqw; right: 1cqw; border-left: none; border-top: none; }
 
-        .text-inner-scroll { overflow: hidden; width: 100%; max-height: 100%; display: flex; flex-direction: column; --text-scale: 1; }
+        /* [核心修正2] 將文字區塊內部重新啟用點擊，確保能編輯文字 */
+        .text-inner-scroll { overflow: hidden; width: 100%; max-height: 100%; display: flex; flex-direction: column; --text-scale: 1; pointer-events: auto; }
         span[data-hl="true"] { transition: color 0.3s ease, font-weight 0.3s; color: inherit; font-weight: inherit; }
         body.show-highlight span[data-hl="true"] { color: var(--slide-hl); font-weight: 600; }
 
@@ -168,10 +171,12 @@
         .text-inner-scroll [contenteditable="true"] { outline: none; border-radius: 4px; padding: 0 4px; margin-left: -4px; transition: background 0.3s; }
         .text-inner-scroll [contenteditable="true"]:focus { background: var(--slide-edit-bg); cursor: text; }
 
-        /* 一般版式 */
+        /* [核心修正3] 確保行動版圖片容器自身啟用事件並取消點擊高光干擾 */
         .feature-img-wrapper { 
             position: relative; z-index: 2; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; 
             opacity: var(--feature-img-opacity); filter: contrast(1.05) saturate(0.85); transition: opacity 0.3s, transform 0.5s, filter 0.5s;
+            pointer-events: auto; 
+            -webkit-tap-highlight-color: transparent;
         }
         
         .art-frame { position: relative; padding: 0.8cqw; background: var(--slide-frame); border: 1px solid var(--slide-border); box-shadow: 0 15px 45px rgba(0,0,0,0.1); max-width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; transition: background 0.5s, border-color 0.5s;}
@@ -199,12 +204,12 @@
         .layout-bottom-text .text-inner-scroll p { margin-top: 0; }
 
         /* =======================================================
-           抽象幾何裝飾模式 (模式 1 & 2 共用佈局)
+           抽象幾何裝飾模式
            ======================================================= */
         body.use-geometric .slide .feature-img-wrapper {
             filter: grayscale(30%) sepia(10%) contrast(1.1);
             -webkit-mask-image: none !important; mask-image: none !important;
-            z-index: 2; 
+            z-index: 2; pointer-events: auto;
         }
         
         body.use-geometric .slide .art-frame {
@@ -752,16 +757,17 @@
                         featureImg.src = `https://picsum.photos/seed/${Math.floor(Math.random() * 99999)}/800/800`;
                         artFrame.classList.add('no-hover'); 
                     } else { 
-                        let initialSub = p && p.innerText ? extractKeywords(p.innerText) : "";
+                        /* 核心修正：使用 textContent 來確保在隱藏狀態或手機端下依然能成功提取文字 */
+                        let initialSub = p && p.textContent ? extractKeywords(p.textContent) : "";
                         featureImg.src = getImageUrl(globalMainKeyword, initialSub, index);
                         featureImg.setAttribute('data-main', globalMainKeyword); 
                         featureImg.setAttribute('data-sub', initialSub);
                         
-                        featureImg.addEventListener('click', function() {
+                        featureImg.addEventListener('click', function(e) {
                             if (this.classList.contains('reloading') || currentLayoutMode === 2) return; 
                             this.classList.add('reloading');
                             let currentP = newSlide.querySelector('p');
-                            let slideText = currentP ? currentP.innerText : ""; 
+                            let slideText = currentP ? currentP.textContent : ""; 
                             if (!slideText.trim()) { this.classList.remove('reloading'); return; }
 
                             let storageKey = `aura_slide_${index}_kws`, usedKws = JSON.parse(sessionStorage.getItem(storageKey) || "[]"), currentSub = this.getAttribute('data-sub');
@@ -896,41 +902,32 @@
             return runs.length > 0 ? runs : [{ text: htmlElement.innerText, options: { color: defaultColor, fontFace: font } }];
         }
 
-        // =======================================================================
-        // 核心修正：利用離線 Canvas 將圖片物理裁切為具有透明背景的完美圓形 Base64
-        // 以徹底繞開 PptxGenJS 原生不支援任意形狀遮罩的缺陷
-        // =======================================================================
         function cropImageToCircleBase64(imgEl) {
             try {
                 let natW = imgEl.naturalWidth || 800;
                 let natH = imgEl.naturalHeight || 800;
                 let minSide = Math.min(natW, natH);
                 
-                // 限制最高解析度以確保 PPTX 檔案大小不會失控
                 let size = Math.min(minSide, 800); 
                 
                 const canvas = document.createElement('canvas');
                 canvas.width = size; canvas.height = size;
                 const ctx = canvas.getContext('2d');
                 
-                // 1. 繪製並裁切出完美圓形遮罩
                 ctx.beginPath();
                 ctx.arc(size/2, size/2, size/2, 0, 2*Math.PI);
                 ctx.closePath();
                 ctx.clip();
                 
-                // 2. 注入等同於 UI 的美學濾鏡設定
                 ctx.filter = 'grayscale(30%) sepia(10%) contrast(1.1)';
                 
-                // 3. 執行 Object-fit: cover 置中裁切演算法
                 let sw = natW, sh = natH;
                 let sx = 0, sy = 0;
                 if (sw > sh) { sx = (sw - sh) / 2; sw = sh; }
                 else { sy = (sh - sw) / 2; sh = sw; }
                 
-                // 4. 將圖片寫入畫布
                 ctx.drawImage(imgEl, sx, sy, sw, sh, 0, 0, size, size);
-                return canvas.toDataURL('image/png'); // 必須是 PNG 以保留透明區域
+                return canvas.toDataURL('image/png'); 
             } catch(e) {
                 console.warn("Canvas crop failed, fallback to original", e);
                 return imgEl.src;
@@ -972,8 +969,6 @@
                     if (isGeometricLayout) {
                         boxX = 1.5; boxY = 1.5; boxW = 7.0; boxH = 2.6;
                         
-                        // 幾何模式下：我們刻意宣告「完美的滿版正圓 (寬度=高度)」，並利用座標位移將它偏移出 Slide 邊界外
-                        // PowerPoint 在播放時會自動將畫面外的區域裁切掉，這完美達成 UI 中 border-radius: 50vw 的視覺效果！
                         if (cList.contains('layout-img-left')) { 
                             imgW = 5.5; imgH = 5.5; imgX = -2.75; imgY = 0.0625; 
                         }
@@ -1025,20 +1020,16 @@
                         if (!isGeometricLayout && cList.contains('layout-bottom-text')) boxY += heightDiff; else boxY += (heightDiff / 2);
                     }
 
-                    // 渲染主配圖
                     if (hasImg) {
                         let featureImg = slide.querySelector('.feature-img-wrapper img');
                         if (featureImg) {
                             try { 
                                 if (isGeometricLayout) {
-                                    // 關鍵修正：透過 Canvas 將原圖物理性裁減為完美去背圓形的 Base64 資料流
                                     let circleBase64 = cropImageToCircleBase64(featureImg);
-                                    
                                     pptSlide.addImage({ 
                                         data: circleBase64, 
                                         x: imgX, y: imgY, w: imgW, h: imgH, 
                                         transparency: pptxImgOpacity,
-                                        // 由於影像是去背圓形 PNG，PPT 的陰影會自動精準貼合圓形外輪廓！
                                         shadow: { type: 'outer', opacity: 0.15, blur: 8 }
                                     }); 
                                 } else {
